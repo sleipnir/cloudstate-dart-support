@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:async';
+import 'dart:typed_data';
 
 import 'generated/protocol/cloudstate/entity.pbgrpc.dart';
 import 'generated/protocol/cloudstate/event_sourced.pbgrpc.dart';
@@ -8,10 +11,29 @@ import 'package:grpc/src/server/call.dart';
 
 class EntityDiscoveryService extends EntityDiscoveryServiceBase {
 
+  final Uint8List _protoBytes;
+  final String _serviceName;
+
+  EntityDiscoveryService(this._protoBytes, this._serviceName);
+
   @override
   Future<EntitySpec> discover(ServiceCall call, ProxyInfo request) {
-    // TODO: implement discover
-    return null;
+    var entitySpecResponseFuture = Completer<EntitySpec>();
+
+    var serviceInfo = ServiceInfo()
+      ..serviceName = _serviceName
+      ..serviceRuntime = 'Dart'
+      ..serviceVersion = Platform.version
+      ..supportLibraryName = 'cloudstate_dart_support'
+      ..supportLibraryVersion = '0.5.0';
+
+    var entitySpec = EntitySpec()
+      ..proto = _protoBytes
+      //..entities = []
+      ..serviceInfo = serviceInfo;
+
+    entitySpecResponseFuture.complete(entitySpec);
+    return entitySpecResponseFuture.future;
   }
 
   @override

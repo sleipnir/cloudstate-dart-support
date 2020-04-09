@@ -1,0 +1,24 @@
+name: shopping_cart
+version: 0.5.0
+description: A Cloudstate Dart ShoppingCart Example.
+author: Adriano Santos <sleipnir@bsd.com.br>
+homepage: https://cloudstate.io
+repository: https://github.com/sleipnir/cloudstate-dart-support.git
+
+environment:
+  sdk: '>=2.7.0 <3.0.0'
+
+dependencies:
+  cloudstate_dart_support:
+    path: ../../
+  async: ^2.2.0
+  grpc: ^2.1.3
+  protobuf: ^1.0.1
+
+dev_dependencies:
+  pedantic: ^1.8.0
+  build_runner: ^1.5.2
+  build_test: ^0.10.8
+  build_web_compilers: ^2.1.1
+  mockito: ^4.1.0
+  test: ^1.6.4

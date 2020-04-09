@@ -1,4 +1,5 @@
 
+import 'dart:io';
 import 'dart:mirrors';
 
 import 'package:cloudstate_dart_support/src/generated/protocol/google/protobuf/descriptor.pb.dart';
@@ -22,10 +23,7 @@ class Cloudstate {
   int port;
   String address;
 
-  void registerEventSourcedEntity(
-      Type entity,
-      ServiceDescriptorProto descriptor,
-      List<FileDescriptorProto> additionalDescriptors) async {
+  void registerEventSourcedEntity(Type entity, String serviceName) {
     _logger.i('Registering EventSourcedEntity');
 
     if (entity == null) {
@@ -33,9 +31,14 @@ class Cloudstate {
     }
 
     var typeMirror = reflectType(entity);
+    var _bytes = File('user-function.desc').readAsBytesSync();
+    var _serviceDescriptorProto = ServiceDescriptorProto()
+      ..mergeFromBuffer(_bytes);
+
+    var _descriptorBuffer = _serviceDescriptorProto.writeToBuffer();
 
     _eventSourcedService = EventSourcedService();
-    _entityDiscoveryService = EntityDiscoveryService();
+    _entityDiscoveryService = EntityDiscoveryService(_descriptorBuffer, serviceName);
   }
 
   Future<void> start() async {
