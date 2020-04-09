@@ -1,4 +1,7 @@
 
+import 'dart:mirrors';
+
+import 'package:cloudstate_dart_support/src/generated/protocol/google/protobuf/descriptor.pb.dart';
 import 'package:logger/logger.dart';
 
 import 'cloudstate_dart_support_services.dart';
@@ -19,8 +22,18 @@ class Cloudstate {
   int port;
   String address;
 
-  void registerEventSourcedEntity() async {
+  void registerEventSourcedEntity(
+      Type entity,
+      ServiceDescriptorProto descriptor,
+      List<FileDescriptorProto> additionalDescriptors) async {
     _logger.i('Registering EventSourcedEntity');
+
+    if (entity == null) {
+      throw ArgumentError('type: $entity');
+    }
+
+    var typeMirror = reflectType(entity);
+
     _eventSourcedService = EventSourcedService();
     _entityDiscoveryService = EntityDiscoveryService();
   }
