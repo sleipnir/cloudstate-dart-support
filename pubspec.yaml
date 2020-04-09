@@ -3,6 +3,7 @@ version: 0.5.0
 description: A Cloudstate Dart Language Support.
 author: Adriano Santos <sleipnir@bsd.com.br>
 homepage: https://cloudstate.io
+repository: https://github.com/sleipnir/cloudstate-dart-support.git
 
 environment:
   sdk: '>=2.7.0 <3.0.0'
