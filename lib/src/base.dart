@@ -2,10 +2,10 @@
 import 'dart:io';
 import 'dart:mirrors';
 
-import 'package:cloudstate_dart_support/src/generated/protocol/google/protobuf/descriptor.pb.dart';
+import 'package:cloudstate/src/generated/protocol/google/protobuf/descriptor.pb.dart';
 import 'package:logger/logger.dart';
 
-import 'cloudstate_dart_support_services.dart';
+import 'services.dart';
 import 'package:grpc/src/server/server.dart';
 
 class Cloudstate {
@@ -20,6 +20,8 @@ class Cloudstate {
   EventSourcedService _eventSourcedService;
   EntityDiscoveryService _entityDiscoveryService;
 
+  final Map<String, StatefulService> services = Map();
+
   int port;
   String address;
 
@@ -32,8 +34,9 @@ class Cloudstate {
 
     var typeMirror = reflectType(entity);
     var _bytes = File('user-function.desc').readAsBytesSync();
-    var _serviceDescriptorProto = ServiceDescriptorProto()
-      ..mergeFromBuffer(_bytes);
+    var fileDescriptor = FileDescriptorProto.fromBuffer(_bytes);
+    var _serviceDescriptorProto = FileDescriptorSet.create()
+        ..file.add(fileDescriptor);
 
     var _descriptorBuffer = _serviceDescriptorProto.writeToBuffer();
 
@@ -47,6 +50,9 @@ class Cloudstate {
     _logger.i('Server listening on $address:$port ...');
   }
 
+}
+
+class StatefulService {
 }
 
 class EntityId {

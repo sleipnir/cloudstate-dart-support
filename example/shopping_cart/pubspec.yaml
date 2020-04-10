@@ -9,7 +9,7 @@ environment:
   sdk: '>=2.7.0 <3.0.0'
 
 dependencies:
-  cloudstate_dart_support:
+  cloudstate:
     path: ../../
   async: ^2.2.0
   grpc: ^2.1.3

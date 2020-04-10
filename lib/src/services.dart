@@ -4,8 +4,8 @@ import 'dart:typed_data';
 
 import 'generated/protocol/cloudstate/entity.pbgrpc.dart';
 import 'generated/protocol/cloudstate/event_sourced.pbgrpc.dart';
-import 'package:cloudstate_dart_support/src/generated/protocol/cloudstate/crdt.pbgrpc.dart';
-import 'package:cloudstate_dart_support/src/generated/protocol/google/protobuf/empty.pb.dart';
+import 'package:cloudstate/src/generated/protocol/cloudstate/crdt.pbgrpc.dart';
+import 'package:cloudstate/src/generated/protocol/google/protobuf/empty.pb.dart';
 
 import 'package:grpc/src/server/call.dart';
 
@@ -27,9 +27,14 @@ class EntityDiscoveryService extends EntityDiscoveryServiceBase {
       ..supportLibraryName = 'cloudstate_dart_support'
       ..supportLibraryVersion = '0.5.0';
 
+    var entity = Entity()
+      ..serviceName = _serviceName
+      ..entityType = 'cloudstate.eventsourced.EventSourced'
+      ..persistenceId = 'shopping-cart';
+
     var entitySpec = EntitySpec()
       ..proto = _protoBytes
-      //..entities = []
+      ..entities.add(entity)
       ..serviceInfo = serviceInfo;
 
     entitySpecResponseFuture.complete(entitySpec);
