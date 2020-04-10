@@ -1,6 +1,6 @@
 import 'package:cloudstate/cloudstate.dart';
 
-@EventSourcedEntity()
+@EventSourcedEntity('ShoppingCartEntity')
 class ShoppingCartEntity {
 
 }

@@ -16,15 +16,15 @@ export 'shoppingcart.pb.dart';
 
 class ShoppingCartClient extends $grpc.Client {
   static final _$addItem = $grpc.ClientMethod<$0.AddLineItem, $1.Empty>(
-      '/com.example.shoppingcart.ShoppingCart/AddItem',
+      '/ShoppingCart/AddItem',
       ($0.AddLineItem value) => value.writeToBuffer(),
       ($core.List<$core.int> value) => $1.Empty.fromBuffer(value));
   static final _$removeItem = $grpc.ClientMethod<$0.RemoveLineItem, $1.Empty>(
-      '/com.example.shoppingcart.ShoppingCart/RemoveItem',
+      '/ShoppingCart/RemoveItem',
       ($0.RemoveLineItem value) => value.writeToBuffer(),
       ($core.List<$core.int> value) => $1.Empty.fromBuffer(value));
   static final _$getCart = $grpc.ClientMethod<$0.GetShoppingCart, $0.Cart>(
-      '/com.example.shoppingcart.ShoppingCart/GetCart',
+      '/ShoppingCart/GetCart',
       ($0.GetShoppingCart value) => value.writeToBuffer(),
       ($core.List<$core.int> value) => $0.Cart.fromBuffer(value));
 
@@ -55,7 +55,7 @@ class ShoppingCartClient extends $grpc.Client {
 }
 
 abstract class ShoppingCartServiceBase extends $grpc.Service {
-  $core.String get $name => 'com.example.shoppingcart.ShoppingCart';
+  $core.String get $name => 'ShoppingCart';
 
   ShoppingCartServiceBase() {
     $addMethod($grpc.ServiceMethod<$0.AddLineItem, $1.Empty>(

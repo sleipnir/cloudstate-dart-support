@@ -17,7 +17,7 @@ const LineItem$json = const {
 const ItemAdded$json = const {
   '1': 'ItemAdded',
   '2': const [
-    const {'1': 'item', '3': 1, '4': 1, '5': 11, '6': '.com.example.shoppingcart.persistence.LineItem', '10': 'item'},
+    const {'1': 'item', '3': 1, '4': 1, '5': 11, '6': '.persistence.LineItem', '10': 'item'},
   ],
 };
 
@@ -31,7 +31,7 @@ const ItemRemoved$json = const {
 const Cart$json = const {
   '1': 'Cart',
   '2': const [
-    const {'1': 'items', '3': 1, '4': 3, '5': 11, '6': '.com.example.shoppingcart.persistence.LineItem', '10': 'items'},
+    const {'1': 'items', '3': 1, '4': 3, '5': 11, '6': '.persistence.LineItem', '10': 'items'},
   ],
 };
 

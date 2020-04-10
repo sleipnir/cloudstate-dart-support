@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:typed_data';
+
+import 'package:cloudstate/src/generated/protocol/cloudstate/entity.pb.dart';
 
 import 'generated/protocol/cloudstate/entity.pbgrpc.dart';
 import 'generated/protocol/cloudstate/event_sourced.pbgrpc.dart';
@@ -22,30 +23,32 @@ class StatefulService {
 
 class EntityDiscoveryService extends EntityDiscoveryServiceBase {
 
-  final Uint8List _protoBytes;
-  final String _serviceName;
+  final Map<String, StatefulService> services;
 
-  EntityDiscoveryService(this._protoBytes, this._serviceName);
+  EntityDiscoveryService(this.services);
 
   @override
   Future<EntitySpec> discover(ServiceCall call, ProxyInfo request) {
     var entitySpecResponseFuture = Completer<EntitySpec>();
 
     var serviceInfo = ServiceInfo()
-      ..serviceName = _serviceName
+      ..serviceName = 'ShoppingCart'
       ..serviceRuntime = 'Dart'
-      ..serviceVersion = Platform.version
-      ..supportLibraryName = 'cloudstate_dart_support'
+      ..serviceVersion = 'Dart ' + Platform.version
+      ..supportLibraryName = 'Cloudstate Dart Support'
       ..supportLibraryVersion = '0.5.0';
 
-    var entity = Entity()
-      ..serviceName = _serviceName
-      ..entityType = 'cloudstate.eventsourced.EventSourced'
-      ..persistenceId = 'shopping-cart';
 
+    // ignore: omit_local_variable_types, prefer_collection_literals
+    final List<Entity> entities = List();
+    services.forEach((k,v) {
+      entities.add(createEntity(k, v));
+    });
+
+    var _bytes = File('user-function.desc').readAsBytesSync();
     var entitySpec = EntitySpec()
-      ..proto = _protoBytes
-      ..entities.add(entity)
+      ..proto = _bytes
+      ..entities.addAll(entities)
       ..serviceInfo = serviceInfo;
 
     entitySpecResponseFuture.complete(entitySpec);
@@ -56,6 +59,14 @@ class EntityDiscoveryService extends EntityDiscoveryServiceBase {
   Future<Empty> reportError(ServiceCall call, UserFunctionError request) {
     // TODO: implement reportError
     return null;
+  }
+
+  Entity createEntity(String k, StatefulService v) {
+    print('PersistenceId -> ${v.persistenceId()}. ServiceName -> ${v.serviceName()}');
+    return Entity()
+      ..serviceName = v.serviceName()
+      ..entityType = v.entityType()
+      ..persistenceId = v.persistenceId();
   }
 
 }
