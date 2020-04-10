@@ -9,6 +9,17 @@ import 'package:cloudstate/src/generated/protocol/google/protobuf/empty.pb.dart'
 
 import 'package:grpc/src/server/call.dart';
 
+class StatefulService {
+  // ignore: missing_return
+  String serviceName(){}
+  // ignore: missing_return
+  Type entity() {}
+  // ignore: missing_return
+  String entityType(){}
+  // ignore: missing_return
+  String persistenceId(){}
+}
+
 class EntityDiscoveryService extends EntityDiscoveryServiceBase {
 
   final Uint8List _protoBytes;

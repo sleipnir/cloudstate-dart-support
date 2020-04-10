@@ -1,3 +1,33 @@
+import 'package:cloudstate/src/services.dart';
+
+class EventSourcedStatefulService implements StatefulService {
+  static const String event_sourced_type = 'cloudstate.eventsourced.EventSourced';
+
+  String service;
+  Type userEntity;
+  int snapshotEvery;
+
+  @override
+  String serviceName() {
+    return service;
+  }
+
+  @override
+  String entityType() {
+    return event_sourced_type;
+  }
+
+  @override
+  String persistenceId() {
+    return null;
+  }
+
+  @override
+  Type entity() {
+    return userEntity;
+  }
+
+}
 
 class EventSourcedCommandHandler {
   final String name;
