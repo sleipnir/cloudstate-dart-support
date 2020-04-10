@@ -2,7 +2,7 @@
 // #example-shopping-cart-proto
 syntax = "proto3";
 
-//package com.example.shoppingcart;
+package com.example.shoppingcart;
 
 import "google/protobuf/empty.proto";
 import "cloudstate/entity_key.proto";

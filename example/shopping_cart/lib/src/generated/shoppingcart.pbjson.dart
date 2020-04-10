@@ -42,7 +42,7 @@ const LineItem$json = const {
 const Cart$json = const {
   '1': 'Cart',
   '2': const [
-    const {'1': 'items', '3': 1, '4': 3, '5': 11, '6': '.LineItem', '10': 'items'},
+    const {'1': 'items', '3': 1, '4': 3, '5': 11, '6': '.com.example.shoppingcart.LineItem', '10': 'items'},
   ],
 };
 

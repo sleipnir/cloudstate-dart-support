@@ -10,7 +10,7 @@ import 'dart:core' as $core;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 class AddLineItem extends $pb.GeneratedMessage {
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo('AddLineItem', createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('AddLineItem', package: const $pb.PackageName('com.example.shoppingcart'), createEmptyInstance: create)
     ..aOS(1, 'userId')
     ..aOS(2, 'productId')
     ..aOS(3, 'name')
@@ -71,7 +71,7 @@ class AddLineItem extends $pb.GeneratedMessage {
 }
 
 class RemoveLineItem extends $pb.GeneratedMessage {
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo('RemoveLineItem', createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('RemoveLineItem', package: const $pb.PackageName('com.example.shoppingcart'), createEmptyInstance: create)
     ..aOS(1, 'userId')
     ..aOS(2, 'productId')
     ..hasRequiredFields = false
@@ -112,7 +112,7 @@ class RemoveLineItem extends $pb.GeneratedMessage {
 }
 
 class GetShoppingCart extends $pb.GeneratedMessage {
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo('GetShoppingCart', createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('GetShoppingCart', package: const $pb.PackageName('com.example.shoppingcart'), createEmptyInstance: create)
     ..aOS(1, 'userId')
     ..hasRequiredFields = false
   ;
@@ -143,7 +143,7 @@ class GetShoppingCart extends $pb.GeneratedMessage {
 }
 
 class LineItem extends $pb.GeneratedMessage {
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo('LineItem', createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('LineItem', package: const $pb.PackageName('com.example.shoppingcart'), createEmptyInstance: create)
     ..aOS(1, 'productId')
     ..aOS(2, 'name')
     ..a<$core.int>(3, 'quantity', $pb.PbFieldType.O3)
@@ -194,7 +194,7 @@ class LineItem extends $pb.GeneratedMessage {
 }
 
 class Cart extends $pb.GeneratedMessage {
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo('Cart', createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('Cart', package: const $pb.PackageName('com.example.shoppingcart'), createEmptyInstance: create)
     ..pc<LineItem>(1, 'items', $pb.PbFieldType.PM, subBuilder: LineItem.create)
     ..hasRequiredFields = false
   ;

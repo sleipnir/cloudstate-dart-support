@@ -10,7 +10,7 @@ import 'dart:core' as $core;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 class LineItem extends $pb.GeneratedMessage {
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo('LineItem', package: const $pb.PackageName('persistence'), createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('LineItem', package: const $pb.PackageName('com.example.shoppingcart.persistence'), createEmptyInstance: create)
     ..aOS(1, 'productId', protoName: 'productId')
     ..aOS(2, 'name')
     ..a<$core.int>(3, 'quantity', $pb.PbFieldType.O3)
@@ -61,7 +61,7 @@ class LineItem extends $pb.GeneratedMessage {
 }
 
 class ItemAdded extends $pb.GeneratedMessage {
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo('ItemAdded', package: const $pb.PackageName('persistence'), createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('ItemAdded', package: const $pb.PackageName('com.example.shoppingcart.persistence'), createEmptyInstance: create)
     ..aOM<LineItem>(1, 'item', subBuilder: LineItem.create)
     ..hasRequiredFields = false
   ;
@@ -94,7 +94,7 @@ class ItemAdded extends $pb.GeneratedMessage {
 }
 
 class ItemRemoved extends $pb.GeneratedMessage {
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo('ItemRemoved', package: const $pb.PackageName('persistence'), createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('ItemRemoved', package: const $pb.PackageName('com.example.shoppingcart.persistence'), createEmptyInstance: create)
     ..aOS(1, 'productId', protoName: 'productId')
     ..hasRequiredFields = false
   ;
@@ -125,7 +125,7 @@ class ItemRemoved extends $pb.GeneratedMessage {
 }
 
 class Cart extends $pb.GeneratedMessage {
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo('Cart', package: const $pb.PackageName('persistence'), createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('Cart', package: const $pb.PackageName('com.example.shoppingcart.persistence'), createEmptyInstance: create)
     ..pc<LineItem>(1, 'items', $pb.PbFieldType.PM, subBuilder: LineItem.create)
     ..hasRequiredFields = false
   ;
