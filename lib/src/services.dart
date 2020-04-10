@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:async';
-
+import 'package:yaml/yaml.dart';
 import 'package:cloudstate/src/generated/protocol/cloudstate/entity.pb.dart';
 
 import 'generated/protocol/cloudstate/entity.pbgrpc.dart';
@@ -31,13 +31,15 @@ class EntityDiscoveryService extends EntityDiscoveryServiceBase {
   Future<EntitySpec> discover(ServiceCall call, ProxyInfo request) {
     var entitySpecResponseFuture = Completer<EntitySpec>();
 
+    var f = File('../../pubspec.yaml');
+    var text = f.readAsStringSync();
+    Map yaml = loadYaml(text);
     var serviceInfo = ServiceInfo()
       ..serviceName = 'ShoppingCart'
       ..serviceRuntime = 'Dart'
       ..serviceVersion = 'Dart ' + Platform.version
       ..supportLibraryName = 'Cloudstate Dart Support'
-      ..supportLibraryVersion = '0.5.0';
-
+      ..supportLibraryVersion = yaml['version'];
 
     // ignore: omit_local_variable_types, prefer_collection_literals
     final List<Entity> entities = List();
