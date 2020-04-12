@@ -109,9 +109,10 @@ class EventSourcedService extends EventSourcedServiceBase {
   }
 
   Stream<EventSourcedStreamOut> runtEntity(Stream<EventSourcedStreamIn> request) async* {
-
     EventSourcedStatefulService service;
     await for (var stream in request) {
+      _logger.d('Stream message received:\n$stream');
+
       if (stream.hasInit()) {
         _logger.d('Stream Init Message:\n$stream');
 
@@ -123,15 +124,19 @@ class EventSourcedService extends EventSourcedServiceBase {
               ..failure = failure;
           ;
         }
-
+        
         service = services[initMessage.serviceName] as EventSourcedStatefulService;
-        _logger.d('Handling service ${service.serviceName()}...');
+        _logger.d('Service found ${service.serviceName()}\n');
+        var entityHandler = EventSourcedEntityHandlerFactory
+            .getOrCreate(initMessage.entityId, service);
 
       }
 
-      if (stream.hasCommand() && service != null){
+      if (stream.hasCommand()){
         var commandMessage = stream.command;
         _logger.d('Received Command Message:\n$commandMessage');
+        var entityHandler = EventSourcedEntityHandlerFactory
+            .getOrCreate(commandMessage.entityId, service);
 
         //todo
         _logger.d('Returning response to Proxy');

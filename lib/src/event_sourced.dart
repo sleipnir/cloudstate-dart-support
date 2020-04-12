@@ -1,6 +1,7 @@
 import 'dart:mirrors';
 
 import 'package:cloudstate/src/services.dart';
+import 'package:logger/logger.dart';
 
 import '../cloudstate.dart';
 
@@ -29,7 +30,6 @@ class EventSourcedStatefulService implements StatefulService {
       _persistenceId = eventSourcedAnnotationInstance.persistenceId;
       this.snapshotEvery = eventSourcedAnnotationInstance.snapshotEvery;
     }
-
   }
 
   @override
@@ -52,6 +52,35 @@ class EventSourcedStatefulService implements StatefulService {
     return userEntity;
   }
 
+}
+
+class EventSourcedEntityHandlerFactory {
+  static final _logger = Logger(
+    filter: null,
+    printer: LogfmtPrinter(),
+    output: ConsoleOutput(),
+  );
+
+  static final Map<String, EventSourcedEntityHandler> _services = {};
+
+  static EventSourcedEntityHandler getOrCreate(String entityId, EventSourcedStatefulService service) {
+    if (_services.containsKey(entityId)) {
+      _logger.d('EntityHandler for entity[$entityId] is cached');
+      return _services[entityId];
+    }
+    _logger.d('Creating new EntityHandler for entity: $entityId');
+    var handler = EventSourcedEntityHandler(entityId, service);
+    _services[entityId] = handler;
+    return handler;
+  }
+
+}
+
+class EventSourcedEntityHandler {
+  final String persistenceId;
+  final EventSourcedStatefulService service;
+
+  EventSourcedEntityHandler(this.persistenceId, this.service);
 }
 
 class EventSourcedEntity {
