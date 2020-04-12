@@ -12,33 +12,31 @@ class ShoppingCartEntity {
 
   @Snapshot()
   Domain.Cart snapshot() {
-    return Domain.Cart.create();
-    /*return Domain.Cart.newBuilder()
-        .addAllItems(cart.values().stream().map(this::convert).collect(Collectors.toList()))
-        .build();*/
+    return Domain.Cart.create()
+        ..items.addAll(
+            _cart.values.map((e) => convertShoppingItem(e))
+            .toList());
   }
 
   @SnapshotHandler()
   void handleSnapshot(Domain.Cart cart) {
     _cart.clear();
-    /*for (Domain.LineItem item : cart.getItemsList()) {
-      this.cart.put(item.getProductId(), convert(item));
-    }*/
+    for (var item in cart.items) {
+      _cart[item.productId] =  convert(item);
+    }
 
   }
 
   @EventHandler()
   void itemAdded(Domain.ItemAdded itemAdded) {
-    /*Shoppingcart.LineItem item = _cart.get(itemAdded.getItem().getProductId());
+    var item = _cart[itemAdded.item.productId];
     if (item == null) {
-      item = convert(itemAdded.getItem());
+      item = convert(itemAdded.item);
     } else {
       item =
-          item.toBuilder()
-              .setQuantity(item.getQuantity() + itemAdded.getItem().getQuantity())
-              .build();
+          item..quantity = item.quantity + itemAdded.item.quantity;
     }
-    _cart.put(item.getProductId(), item);*/
+    _cart[item.productId] = item;
   }
 
   @EventHandler()
@@ -48,32 +46,31 @@ class ShoppingCartEntity {
 
   @EventSourcedCommandHandler()
   Shoppingcart.Cart getCart() {
-    return null;//Shoppingcart.Cart.newBuilder().addAllItems(cart.values()).build();
+    return Shoppingcart.Cart.create()
+        ..items.addAll(_cart.values);
   }
 
   @EventSourcedCommandHandler()
-  Empty addItem(Shoppingcart.AddLineItem item/*, CommandContext ctx*/) {
+  Empty addItem(Shoppingcart.AddLineItem item, CommandContext ctx) {
     if (item.quantity <= 0) {
-      //ctx.fail('Cannot add negative quantity of to item' + item.productId);
+      ctx.fail('Cannot add negative quantity of to item ${item.productId}');
     }
-    /*ctx.emit(
-        Domain.ItemAdded.newBuilder()
-            .setItem(
-            Domain.LineItem.newBuilder()
-                .setProductId(item.getProductId())
-                .setName(item.getName())
-                .setQuantity(item.getQuantity())
-                .build())
-            .build());*/
+
+    var lineIem = Domain.LineItem.create()
+      ..productId = item.productId
+      ..name = item.name
+      ..quantity = item.quantity;
+
+    ctx.emit(Domain.ItemAdded.create()..item = lineIem);
     return Empty.getDefault();
   }
 
   @EventSourcedCommandHandler()
-  Empty removeItem(Shoppingcart.RemoveLineItem item/*, CommandContext ctx*/) {
-    /*if (!cart.containsKey(item.getProductId())) {
-      ctx.fail("Cannot remove item " + item.getProductId() + " because it is not in the cart.");
+  Empty removeItem(Shoppingcart.RemoveLineItem item, CommandContext ctx) {
+    if (!_cart.containsKey(item.productId)) {
+      ctx.fail('Cannot remove item ${item.productId} because it is not in the cart.');
     }
-    ctx.emit(Domain.ItemRemoved.newBuilder().setProductId(item.getProductId()).build());*/
+    ctx.emit(Domain.ItemRemoved.create()..productId = item.productId);
     return Empty.getDefault();
   }
 
