@@ -31,7 +31,7 @@ class CloudstateRunner {
   CloudstateRunner(this.config, this.services);
 
   Future<void> start() async {
-    _eventSourcedService = EventSourcedService();
+    _eventSourcedService = EventSourcedService(services);
 
     _entityDiscoveryService = EntityDiscoveryService(services);
 

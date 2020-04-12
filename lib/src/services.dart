@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:async';
+import 'package:cloudstate/cloudstate.dart';
+import 'package:logger/logger.dart';
 import 'package:yaml/yaml.dart';
 import 'package:cloudstate/src/generated/protocol/cloudstate/entity.pb.dart';
 
@@ -22,6 +24,11 @@ class StatefulService {
 }
 
 class EntityDiscoveryService extends EntityDiscoveryServiceBase {
+  final _logger = Logger(
+    filter: null,
+    printer: LogfmtPrinter(),
+    output: ConsoleOutput(),
+  );
 
   final Map<String, StatefulService> services;
 
@@ -29,6 +36,7 @@ class EntityDiscoveryService extends EntityDiscoveryServiceBase {
 
   @override
   Future<EntitySpec> discover(ServiceCall call, ProxyInfo request) {
+    _logger.i('Received discover request from Proxy:\n $request');
     var entitySpecResponseFuture = Completer<EntitySpec>();
 
     var f = File('../../pubspec.yaml');
@@ -74,11 +82,63 @@ class EntityDiscoveryService extends EntityDiscoveryServiceBase {
 }
 
 class EventSourcedService extends EventSourcedServiceBase {
+  final _logger = Logger(
+    filter: null,
+    printer: LogfmtPrinter(),
+    output: ConsoleOutput(),
+  );
 
+  final Map<String, StatefulService> services;
+
+  EventSourcedService(this.services);
+
+  /// The stream. One stream will be established per active entity.
+  /// Once established, the first message sent will be Init, which contains the entity ID, and,
+  /// if the entity has previously persisted a snapshot, it will contain that snapshot. It will
+  /// then send zero to many event messages, one for each event previously persisted. The entity
+  /// is expected to apply these to its state in a deterministic fashion. Once all the events
+  /// are sent, one to many commands are sent, with new commands being sent as new requests for
+  /// the entity come in. The entity is expected to reply to each command with exactly one reply
+  /// message. The entity should reply in order, and any events that the entity requests to be
+  /// persisted the entity should handle itself, applying them to its own state, as if they had
+  /// arrived as events when the event stream was being replayed on load.
   @override
   Stream<EventSourcedStreamOut> handle(ServiceCall call, Stream<EventSourcedStreamIn> request) {
-    // TODO: implement handle
-    return null;
+    _logger.d('Received request from Proxy: $request');
+    return runtEntity(request);
+  }
+
+  Stream<EventSourcedStreamOut> runtEntity(Stream<EventSourcedStreamIn> request) async* {
+
+    EventSourcedStatefulService service;
+    await for (var stream in request) {
+      if (stream.hasInit()) {
+        _logger.d('Stream Init Message:\n$stream');
+
+        var initMessage = stream.init;
+        if(!services.containsKey(initMessage.serviceName)){
+          var failure = Failure.create()
+            ..description = 'Failed to locate service with name {init.ServiceName}';
+          yield EventSourcedStreamOut.create()
+              ..failure = failure;
+          ;
+        }
+
+        service = services[initMessage.serviceName] as EventSourcedStatefulService;
+        _logger.d('Handling service ${service.serviceName()}...');
+
+      }
+
+      if (stream.hasCommand() && service != null){
+        var commandMessage = stream.command;
+        _logger.d('Received Command Message:\n$commandMessage');
+
+        //todo
+        _logger.d('Returning response to Proxy');
+        yield EventSourcedStreamOut.create();
+      }
+
+    }
   }
 
 }
