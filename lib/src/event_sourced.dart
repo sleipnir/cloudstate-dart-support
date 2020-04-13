@@ -195,7 +195,7 @@ class EventSourcedEntityHandlerImpl
     _entityClassMirror = _entityInstanceMirror.type;
 
     _allDeclaredMethods = _entityClassMirror.declarations.values
-        .where((d) => d is MethodMirror)
+        .where((d) => d is MethodMirror && !d.isConstructor)
         .map((f) => f as MethodMirror)
         .toList();
 
