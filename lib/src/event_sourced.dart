@@ -78,8 +78,12 @@ class EventSourcedEntityHandlerFactory {
 
 }
 
-class EventSourcedEntityHandler {
+class EntityFactory {
+    // ignore: missing_return
+  Object newEntityInstance(String persistenceId, Context context) {}
+}
 
+class EventSourcedEntityHandler {
   void handleEvent(Any anyEvent, EventSourcedContext context){}
 
   // ignore: missing_return
@@ -91,11 +95,17 @@ class EventSourcedEntityHandler {
   Optional<Any> snapshot(SnapshotContext context) {}
 }
 
-class EventSourcedEntityHandlerImpl implements EventSourcedEntityHandler {
+class EventSourcedEntityHandlerImpl implements EntityFactory, EventSourcedEntityHandler {
   final String persistenceId;
   final EventSourcedStatefulService service;
 
   EventSourcedEntityHandlerImpl(this.persistenceId, this.service);
+
+  @override
+  Object newEntityInstance(String persistenceId, Context context) {
+    // TODO: implement newInstance
+    return null;
+  }
 
   @override
   Optional<Any> handleCommand(Any anyCommand, CommandContext context) {
@@ -118,6 +128,7 @@ class EventSourcedEntityHandlerImpl implements EventSourcedEntityHandler {
     // TODO: implement snapshot
     return null;
   }
+  
 }
 
 class EventSourcedEntity {
