@@ -2,8 +2,10 @@ import 'dart:mirrors';
 
 import 'package:cloudstate/src/services.dart';
 import 'package:logger/logger.dart';
+import 'package:optional/optional.dart';
 
 import '../cloudstate.dart';
+import 'generated/protocol/google/protobuf/any.pb.dart';
 
 class EventSourcedStatefulService implements StatefulService {
   static const String event_sourced_type = 'cloudstate.eventsourced.EventSourced';
@@ -61,7 +63,7 @@ class EventSourcedEntityHandlerFactory {
     output: ConsoleOutput(),
   );
 
-  static final Map<String, EventSourcedEntityHandler> _services = {};
+  static final Map<String, EventSourcedEntityHandlerImpl> _services = {};
 
   static EventSourcedEntityHandler getOrCreate(String entityId, EventSourcedStatefulService service) {
     if (_services.containsKey(entityId)) {
@@ -69,7 +71,7 @@ class EventSourcedEntityHandlerFactory {
       return _services[entityId];
     }
     _logger.d('Creating new EntityHandler for entity: $entityId');
-    var handler = EventSourcedEntityHandler(entityId, service);
+    var handler = EventSourcedEntityHandlerImpl(entityId, service);
     _services[entityId] = handler;
     return handler;
   }
@@ -77,10 +79,45 @@ class EventSourcedEntityHandlerFactory {
 }
 
 class EventSourcedEntityHandler {
+
+  void handleEvent(Any anyEvent, EventSourcedContext context){}
+
+  // ignore: missing_return
+  Optional<Any> handleCommand(Any anyCommand, CommandContext context) {}
+
+  void handleSnapshot(Any anySnapshot, SnapshotContext context) {}
+
+  // ignore: missing_return
+  Optional<Any> snapshot(SnapshotContext context) {}
+}
+
+class EventSourcedEntityHandlerImpl implements EventSourcedEntityHandler {
   final String persistenceId;
   final EventSourcedStatefulService service;
 
-  EventSourcedEntityHandler(this.persistenceId, this.service);
+  EventSourcedEntityHandlerImpl(this.persistenceId, this.service);
+
+  @override
+  Optional<Any> handleCommand(Any anyCommand, CommandContext context) {
+    // TODO: implement handleCommand
+    return null;
+  }
+
+  @override
+  void handleEvent(Any anyEvent, EventSourcedContext context) {
+    // TODO: implement handleEvent
+  }
+
+  @override
+  void handleSnapshot(Any anySnapshot, SnapshotContext context) {
+    // TODO: implement handleSnapshot
+  }
+
+  @override
+  Optional<Any> snapshot(SnapshotContext context) {
+    // TODO: implement snapshot
+    return null;
+  }
 }
 
 class EventSourcedEntity {
