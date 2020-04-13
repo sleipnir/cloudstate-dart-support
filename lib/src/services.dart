@@ -104,7 +104,7 @@ class EventSourcedService extends EventSourcedServiceBase {
   /// arrived as events when the event stream was being replayed on load.
   @override
   Stream<EventSourcedStreamOut> handle(ServiceCall call, Stream<EventSourcedStreamIn> request) {
-    _logger.d('Received request from Proxy: $request');
+    _logger.d('Received request from Proxy:\n$request');
     return runtEntity(request);
   }
 
@@ -131,7 +131,14 @@ class EventSourcedService extends EventSourcedServiceBase {
             .getOrCreate(initMessage.entityId, service);
 
         if(initMessage.hasSnapshot()) {
-          //Todo: Handle snapshot
+          var eventSourcedSnapshot = initMessage.snapshot;
+          var snapshot = eventSourcedSnapshot.snapshot;
+          var snapshotSequence = eventSourcedSnapshot.snapshotSequence;
+
+          entityHandler.handleSnapshot(
+              eventSourcedSnapshot,
+              SnapshotContextImpl(initMessage.entityId, snapshotSequence.toInt()));
+
         }
 
       }
@@ -141,6 +148,9 @@ class EventSourcedService extends EventSourcedServiceBase {
         _logger.d('Received Command Message:\n$commandMessage');
         var entityHandler = EventSourcedEntityHandlerFactory
             .getOrCreate(commandMessage.entityId, service);
+
+        _logger.d('Handling command...');
+        var optionalResult = entityHandler.handleCommand(commandMessage, CommandContextImpl());
 
         //todo
         _logger.d('Returning response to Proxy');

@@ -1,10 +1,14 @@
 import 'dart:mirrors';
 
 import 'package:cloudstate/src/services.dart';
+import 'package:fixnum/fixnum.dart';
+import 'package:grpc/src/server/call.dart';
 import 'package:logger/logger.dart';
 import 'package:optional/optional.dart';
 
 import '../cloudstate.dart';
+import 'generated/protocol/cloudstate/entity.pb.dart';
+import 'generated/protocol/cloudstate/event_sourced.pb.dart';
 import 'generated/protocol/google/protobuf/any.pb.dart';
 
 class EventSourcedStatefulService implements StatefulService {
@@ -22,20 +26,22 @@ class EventSourcedStatefulService implements StatefulService {
     this.snapshotEvery = snapshotEvery;
     _mirror = reflectClass(userEntity);
 
-    var annotationMirror = reflectClass(EventSourcedEntity);
-    final annotationInstanceMirror = _mirror.metadata
-        .firstWhere((d) => d.type == annotationMirror, orElse: () => null);
+    var evtSourcedAnnotationMirror = reflectClass(EventSourcedEntity);
+    final evtSourcedAnnotationInstanceMirror = _mirror.metadata
+        .firstWhere((d) => d.type == evtSourcedAnnotationMirror, orElse: () => null);
 
-    if (annotationMirror != null) {
-      final eventSourcedAnnotationInstance = (annotationInstanceMirror.reflectee as EventSourcedEntity);
+    if (evtSourcedAnnotationMirror != null) {
+      final eventSourcedAnnotationInstance = (evtSourcedAnnotationInstanceMirror.reflectee as EventSourcedEntity);
       _persistenceId = (isPersistenceIdNotEmpty(eventSourcedAnnotationInstance) ?
           eventSourcedAnnotationInstance.persistenceId : MirrorSystem.getName(_mirror.simpleName));
       this.snapshotEvery = eventSourcedAnnotationInstance.snapshotEvery;
     }
+
   }
 
   bool isPersistenceIdNotEmpty(EventSourcedEntity eventSourcedAnnotationInstance) =>
-      eventSourcedAnnotationInstance.persistenceId != null && eventSourcedAnnotationInstance.persistenceId.isNotEmpty;
+      eventSourcedAnnotationInstance.persistenceId != null && 
+          eventSourcedAnnotationInstance.persistenceId.isNotEmpty;
 
   @override
   String serviceName() {
@@ -83,54 +89,135 @@ class EventSourcedEntityHandlerFactory {
 
 class EntityFactory {
     // ignore: missing_return
-  Object newEntityInstance(String persistenceId, Context context) {}
+  Object getOrCreateEntityInstance(String persistenceId, Context context) {}
 }
 
 class EventSourcedEntityHandler {
-  void handleEvent(Any anyEvent, EventSourcedContext context){}
+  void handleEvent(EventSourcedEvent anyEvent, EventSourcedContext context){}
 
   // ignore: missing_return
-  Optional<Any> handleCommand(Any anyCommand, CommandContext context) {}
+  Optional<Any> handleCommand(Command anyCommand, CommandContext context) {}
 
-  void handleSnapshot(Any anySnapshot, SnapshotContext context) {}
+  void handleSnapshot(EventSourcedSnapshot anySnapshot, SnapshotContext context) {}
 
   // ignore: missing_return
   Optional<Any> snapshot(SnapshotContext context) {}
 }
 
-class EventSourcedEntityHandlerImpl implements EntityFactory, EventSourcedEntityHandler {
+class EventSourcedEntityHandlerImpl 
+    implements EntityFactory, EventSourcedEntityHandler {
+
+  static final _logger = Logger(
+    filter: null,
+    printer: LogfmtPrinter(),
+    output: ConsoleOutput(),
+  );
   final String persistenceId;
   final EventSourcedStatefulService service;
+
+  ClassMirror _entityClassMirror;
+  InstanceMirror _entityInstanceMirror;
+  List<MethodMirror> _allDeclaredMethods;
+
+  Optional<Object> entityInstanceOptional = Optional.empty();
 
   EventSourcedEntityHandlerImpl(this.persistenceId, this.service);
 
   @override
-  Object newEntityInstance(String persistenceId, Context context) {
-    // TODO: implement newInstance
-    return null;
+  Object getOrCreateEntityInstance(String persistenceId, Context context) {
+    if (entityInstanceOptional.isPresent) {
+      _logger.d('Get Entity instance from cache!');
+      return entityInstanceOptional;
+    }
+    entityInstanceOptional = createEntityInstance(persistenceId, context);
+    return postConstruct(entityInstanceOptional.value);
   }
 
   @override
-  Optional<Any> handleCommand(Any anyCommand, CommandContext context) {
+  Optional<Any> handleCommand(Command anyCommand, CommandContext context) {
     // TODO: implement handleCommand
+    _logger.v('Creating EventSourcedEntityCreationContext...');
+    Context ctx =  EventSourcedEntityCreationContextImpl();
+    Object instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
     return null;
   }
 
   @override
-  void handleEvent(Any anyEvent, EventSourcedContext context) {
+  void handleEvent(EventSourcedEvent anyEvent, EventSourcedContext context) {
     // TODO: implement handleEvent
+    Context ctx =  EventSourcedEntityCreationContextImpl();
+    Object instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
   }
 
   @override
-  void handleSnapshot(Any anySnapshot, SnapshotContext context) {
+  void handleSnapshot(EventSourcedSnapshot anySnapshot, SnapshotContext context) {
     // TODO: implement handleSnapshot
+    Context ctx =  EventSourcedEntityCreationContextImpl();
+    Object instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
   }
 
   @override
   Optional<Any> snapshot(SnapshotContext context) {
     // TODO: implement snapshot
+    Context ctx =  EventSourcedEntityCreationContextImpl();
+    Object instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
     return null;
   }
+
+  Optional<Object> createEntityInstance(String persistenceId, Context context) {
+    //todo: Create instance passing correct persistenceId and context values
+    _logger.v('Creating Entity Instance...');
+    return Optional.of(createInstance(service.entity()));
+  }
+
+  Object createInstance(Type type, [Symbol constructor, List
+      arguments, Map<Symbol, dynamic> namedArguments]) {
+
+    if (type == null) {
+      throw ArgumentError('Type: $type');
+    }
+
+    constructor ??= const Symbol('');
+    arguments ??= const [];
+
+    var typeMirror = reflectType(type);
+    if (typeMirror is ClassMirror) {
+      return typeMirror.newInstance(constructor, arguments,namedArguments)
+          .reflectee;
+    } else {
+      throw ArgumentError("Cannot create the instance of the type '$type'.");
+    }
+  }
+
+  Object postConstruct(Object entity) {
+    _logger.d('$entity created. Call postConstruct for entity instance');
+    _entityInstanceMirror ??= reflect(entity);
+    _entityClassMirror = _entityInstanceMirror.type;
+
+    _allDeclaredMethods = _entityClassMirror.declarations.values
+        .where((d) => d is MethodMirror)
+        .map((f) => f as MethodMirror)
+        .toList();
+
+    _logger.v(
+        'Found ${_allDeclaredMethods.length} methods in Entity '
+            '${entity.runtimeType}');
+    
+    processSnapshotMethods(_allDeclaredMethods);
+    processSnapshotHandlerMethods(_allDeclaredMethods);
+    processCommandMethods(_allDeclaredMethods);
+    processEventMethods(_allDeclaredMethods);
+    
+    return entity;
+  }
+
+  void processSnapshotMethods(List<MethodMirror> allDeclaredMethods) {}
+
+  void processSnapshotHandlerMethods(List<MethodMirror> allDeclaredMethods) {}
+
+  void processCommandMethods(List<MethodMirror> allDeclaredMethods) {}
+
+  void processEventMethods(List<MethodMirror> allDeclaredMethods) {}
   
 }
 
@@ -191,6 +278,61 @@ abstract class CommandContext extends EventSourcedContext
 
 }
 
+class CommandContextImpl extends CommandContext {
+
+  @override
+  int commandId() {
+    // TODO: implement commandId
+    return null;
+  }
+
+  @override
+  String commandName() {
+    // TODO: implement commandName
+    return null;
+  }
+
+  @override
+  void effect(ServiceCall effect, [bool synchronous = false]) {
+    // TODO: implement effect
+  }
+
+  @override
+  void emit(Object event) {
+    // TODO: implement emit
+  }
+
+  @override
+  String entityId() {
+    // TODO: implement entityId
+    return null;
+  }
+
+  @override
+  RuntimeException fail(String errorMessage) {
+    // TODO: implement fail
+    return null;
+  }
+
+  @override
+  void forward(ServiceCallClass to) {
+    // TODO: implement forward
+  }
+
+  @override
+  int sequenceNumber() {
+    // TODO: implement sequenceNumber
+    return null;
+  }
+
+  @override
+  ServiceCallFactory serviceCallFactory() {
+    // TODO: implement serviceCallFactory
+    return null;
+  }
+
+}
+
 abstract class EventContext extends EventSourcedContext {
   /// The sequence number of the current event being processed.
   ///
@@ -201,7 +343,21 @@ abstract class EventContext extends EventSourcedContext {
 /// Creation context for {@link EventSourcedEntity} annotated entities.
 ///
 /// <p>This may be accepted as an argument to the constructor of an event sourced entity.
-abstract class EventSourcedEntityCreationContext extends EventSourcedContext {
+abstract class EventSourcedEntityCreationContext extends EventSourcedContext {}
+
+class EventSourcedEntityCreationContextImpl extends EventSourcedEntityCreationContext {
+
+  @override
+  String entityId() {
+    // TODO: implement entityId
+    return null;
+  }
+
+  @override
+  ServiceCallFactory serviceCallFactory() {
+    // TODO: implement serviceCallFactory
+    return null;
+  }
 
 }
 
@@ -211,6 +367,30 @@ abstract class SnapshotContext extends EventSourcedContext {
   ///
   /// @return The sequence number.
   int sequenceNumber();
+}
+
+class SnapshotContextImpl extends SnapshotContext {
+  final String _id;
+  final int _sequence;
+  
+  SnapshotContextImpl(this._id, this._sequence);
+
+  @override
+  String entityId() {
+    return _id;
+  }
+
+  @override
+  int sequenceNumber() {
+    return _sequence;
+  }
+
+  @override
+  ServiceCallFactory serviceCallFactory() {
+    // TODO: implement serviceCallFactory
+    return null;
+  }
+
 }
 
 /// Context that provides client actions, which include failing and forwarding.
