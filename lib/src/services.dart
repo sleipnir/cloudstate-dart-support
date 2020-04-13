@@ -138,7 +138,6 @@ class EventSourcedService extends EventSourcedServiceBase {
           entityHandler.handleSnapshot(
               eventSourcedSnapshot,
               SnapshotContextImpl(initMessage.entityId, snapshotSequence.toInt()));
-
         }
 
       }
@@ -151,10 +150,25 @@ class EventSourcedService extends EventSourcedServiceBase {
 
         _logger.d('Handling command...');
         var optionalResult = entityHandler.handleCommand(commandMessage, CommandContextImpl());
+        if (optionalResult.isPresent){
+          var reply = Reply.create()
+            ..payload = optionalResult.value;
 
-        //todo
-        _logger.d('Returning response to Proxy');
-        yield EventSourcedStreamOut.create();
+          var clientAction = ClientAction.create()
+            ..reply = reply;
+
+          var eventSourcedReply = EventSourcedReply.create()
+            ..commandId = commandMessage.id
+            ..clientAction = clientAction;
+
+          _logger.d('Returning correct response to Proxy');
+          yield EventSourcedStreamOut.create()
+              ..reply = eventSourcedReply;
+        } else {
+          _logger.d('Returning Empty response to Proxy');
+          yield EventSourcedStreamOut.create();
+        }
+
       }
 
     }

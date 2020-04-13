@@ -46,8 +46,14 @@ class ShoppingCartEntity {
 
   @EventSourcedCommandHandler()
   Shoppingcart.Cart getCart() {
+    var item = Shoppingcart.LineItem.create()
+      ..name = 'teste'
+      ..productId = '1'
+      ..quantity = 1;
+
     return Shoppingcart.Cart.create()
-        ..items.addAll(_cart.values);
+        ..items.add(item);
+        //..items.addAll(_cart.values);
   }
 
   @EventSourcedCommandHandler()

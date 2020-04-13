@@ -1,7 +1,6 @@
 import 'dart:mirrors';
 
 import 'package:cloudstate/src/services.dart';
-import 'package:fixnum/fixnum.dart';
 import 'package:grpc/src/server/call.dart';
 import 'package:logger/logger.dart';
 import 'package:optional/optional.dart';
@@ -118,6 +117,10 @@ class EventSourcedEntityHandlerImpl
   ClassMirror _entityClassMirror;
   InstanceMirror _entityInstanceMirror;
   List<MethodMirror> _allDeclaredMethods;
+  final Map<String, MethodMirror> _snapshotMethods = {};
+  final Map<String, MethodMirror> _snapshotHandlerMethods = {};
+  final Map<String, MethodMirror> _commandHandlerMethods = {};
+  final Map<String, MethodMirror> _eventHandlerMethods = {};
 
   Optional<Object> entityInstanceOptional = Optional.empty();
 
@@ -135,11 +138,36 @@ class EventSourcedEntityHandlerImpl
 
   @override
   Optional<Any> handleCommand(Command anyCommand, CommandContext context) {
-    // TODO: implement handleCommand
-    _logger.v('Creating EventSourcedEntityCreationContext...');
-    Context ctx =  EventSourcedEntityCreationContextImpl();
-    Object instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
-    return null;
+    try {
+      _logger.v('Creating EventSourcedEntityCreationContext...');
+      Context ctx =  EventSourcedEntityCreationContextImpl();
+      var instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
+      if(!_commandHandlerMethods.containsKey(anyCommand.name)) {
+        throw Exception('Method ${anyCommand.name} not found!');
+      }
+
+      _logger.d('Handling grpc method ${anyCommand.name}');
+      var method = _commandHandlerMethods[anyCommand.name];
+      if (method.parameters.isEmpty){
+        _logger.v('Using $method!');
+
+        var instanceMirrorResult = reflect(instance).invoke(method.simpleName, []);
+        var result = Any.pack(instanceMirrorResult.reflectee);
+        _logger.d('\nResult: $instanceMirrorResult.\nType result:\n${result}');
+
+        return Optional.of(result);
+      } else {
+        //todo: get instance of type method parameter:  anyCommand.payload.unpackInto(instance);
+        _logger.d('Found Parameters on request method: ${method}');
+
+      }
+    }
+    on Exception  {
+      _logger.e('Error during handling command $Exception');
+      throw Exception('Error during handling command $Exception');
+    }
+
+    return Optional.empty();
   }
 
   @override
@@ -211,13 +239,33 @@ class EventSourcedEntityHandlerImpl
     return entity;
   }
 
-  void processSnapshotMethods(List<MethodMirror> allDeclaredMethods) {}
+  void processSnapshotMethods(List<MethodMirror> allDeclaredMethods) {
+    var snapshotAnnotationMirror = reflectClass(Snapshot);
+    allDeclaredMethods
+        .where((elem) => elem.metadata.where((test) => test.type == snapshotAnnotationMirror) != null)
+        .forEach((e) => _snapshotMethods[capitalize(MirrorSystem.getName(e.simpleName))] = e);
+  }
 
-  void processSnapshotHandlerMethods(List<MethodMirror> allDeclaredMethods) {}
+  void processSnapshotHandlerMethods(List<MethodMirror> allDeclaredMethods) {
+    var snapshotAnnotationHandlerMirror = reflectClass(SnapshotHandler);
+    allDeclaredMethods
+        .where((elem) => elem.metadata.where((test) => test.type == snapshotAnnotationHandlerMirror) != null)
+        .forEach((e) => _snapshotHandlerMethods[capitalize(MirrorSystem.getName(e.simpleName))] = e);
+  }
 
-  void processCommandMethods(List<MethodMirror> allDeclaredMethods) {}
+  void processCommandMethods(List<MethodMirror> allDeclaredMethods) {
+    var commandAnnotationHandlerMirror = reflectClass(EventSourcedCommandHandler);
+    allDeclaredMethods
+        .where((elem) => elem.metadata.where((test) => test.type == commandAnnotationHandlerMirror) != null)
+        .forEach((e) => _commandHandlerMethods[capitalize(MirrorSystem.getName(e.simpleName))] = e);
+  }
 
-  void processEventMethods(List<MethodMirror> allDeclaredMethods) {}
+  void processEventMethods(List<MethodMirror> allDeclaredMethods) {
+    var eventAnnotationHandlerMirror = reflectClass(EventHandler);
+    allDeclaredMethods
+        .where((elem) => elem.metadata.where((test) => test.type == eventAnnotationHandlerMirror) != null)
+        .forEach((e) => _commandHandlerMethods[capitalize(MirrorSystem.getName(e.simpleName))] = e);
+  }
   
 }
 
