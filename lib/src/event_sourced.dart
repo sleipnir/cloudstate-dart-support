@@ -22,17 +22,20 @@ class EventSourcedStatefulService implements StatefulService {
     this.snapshotEvery = snapshotEvery;
     _mirror = reflectClass(userEntity);
 
-    // ignore: omit_local_variable_types
-    final ClassMirror annotationMirror = reflectClass(EventSourcedEntity);
+    var annotationMirror = reflectClass(EventSourcedEntity);
     final annotationInstanceMirror = _mirror.metadata
         .firstWhere((d) => d.type == annotationMirror, orElse: () => null);
 
     if (annotationMirror != null) {
       final eventSourcedAnnotationInstance = (annotationInstanceMirror.reflectee as EventSourcedEntity);
-      _persistenceId = eventSourcedAnnotationInstance.persistenceId;
+      _persistenceId = (isPersistenceIdNotEmpty(eventSourcedAnnotationInstance) ?
+          eventSourcedAnnotationInstance.persistenceId : MirrorSystem.getName(_mirror.simpleName));
       this.snapshotEvery = eventSourcedAnnotationInstance.snapshotEvery;
     }
   }
+
+  bool isPersistenceIdNotEmpty(EventSourcedEntity eventSourcedAnnotationInstance) =>
+      eventSourcedAnnotationInstance.persistenceId != null && eventSourcedAnnotationInstance.persistenceId.isNotEmpty;
 
   @override
   String serviceName() {
@@ -134,7 +137,8 @@ class EventSourcedEntityHandlerImpl implements EntityFactory, EventSourcedEntity
 class EventSourcedEntity {
   final String persistenceId;
   final int snapshotEvery;
-  const EventSourcedEntity([this.persistenceId = '', this.snapshotEvery = 0]);
+  // ignore: avoid_init_to_null
+  const EventSourcedEntity([this.persistenceId = null, this.snapshotEvery = 0]);
 }
 
 class EventSourcedCommandHandler {
