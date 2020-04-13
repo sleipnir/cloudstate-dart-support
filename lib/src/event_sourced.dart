@@ -116,7 +116,8 @@ class EventSourcedEntityHandlerImpl
 
   ClassMirror _entityClassMirror;
   InstanceMirror _entityInstanceMirror;
-  List<MethodMirror> _allDeclaredMethods;
+  // ignore: prefer_collection_literals
+  List<MethodMirror> _allDeclaredMethods = List();
   final Map<String, MethodMirror> _snapshotMethods = {};
   final Map<String, MethodMirror> _snapshotHandlerMethods = {};
   final Map<String, MethodMirror> _commandHandlerMethods = {};
@@ -130,7 +131,7 @@ class EventSourcedEntityHandlerImpl
   Object getOrCreateEntityInstance(String persistenceId, Context context) {
     if (entityInstanceOptional.isPresent) {
       _logger.d('Get Entity instance from cache!');
-      return entityInstanceOptional;
+      return entityInstanceOptional.value;
     }
     entityInstanceOptional = createEntityInstance(persistenceId, context);
     return postConstruct(entityInstanceOptional.value);
@@ -222,19 +223,21 @@ class EventSourcedEntityHandlerImpl
     _entityInstanceMirror ??= reflect(entity);
     _entityClassMirror = _entityInstanceMirror.type;
 
-    _allDeclaredMethods = _entityClassMirror.declarations.values
-        .where((d) => d is MethodMirror && !d.isConstructor)
-        .map((f) => f as MethodMirror)
-        .toList();
+    if (_allDeclaredMethods.isEmpty) {
+      _allDeclaredMethods = _entityClassMirror.declarations.values
+          .where((d) => d is MethodMirror && !d.isConstructor)
+          .map((f) => f as MethodMirror)
+          .toList();
 
-    _logger.v(
-        'Found ${_allDeclaredMethods.length} methods in Entity '
-            '${entity.runtimeType}');
-    
-    processSnapshotMethods(_allDeclaredMethods);
-    processSnapshotHandlerMethods(_allDeclaredMethods);
-    processCommandMethods(_allDeclaredMethods);
-    processEventMethods(_allDeclaredMethods);
+      _logger.v(
+          'Found ${_allDeclaredMethods.length} methods in Entity '
+              '${entity.runtimeType}');
+
+      processSnapshotMethods(_allDeclaredMethods);
+      processSnapshotHandlerMethods(_allDeclaredMethods);
+      processCommandMethods(_allDeclaredMethods);
+      processEventMethods(_allDeclaredMethods);
+    }
     
     return entity;
   }
