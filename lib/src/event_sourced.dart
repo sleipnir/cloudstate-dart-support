@@ -4,6 +4,7 @@ import 'package:cloudstate/src/services.dart';
 import 'package:grpc/src/server/call.dart';
 import 'package:logger/logger.dart';
 import 'package:optional/optional.dart';
+import 'package:protobuf/protobuf.dart';
 
 import '../cloudstate.dart';
 import 'generated/protocol/cloudstate/entity.pb.dart';
@@ -117,7 +118,7 @@ class EventSourcedEntityHandlerImpl
   ClassMirror _entityClassMirror;
   InstanceMirror _entityInstanceMirror;
   // ignore: prefer_collection_literals
-  List<MethodMirror> _allDeclaredMethods = List();
+  List<MethodMirror> _allDeclaredMethods = [];
   final Map<String, MethodMirror> _snapshotMethods = {};
   final Map<String, MethodMirror> _snapshotHandlerMethods = {};
   final Map<String, MethodMirror> _commandHandlerMethods = {};
@@ -161,6 +162,25 @@ class EventSourcedEntityHandlerImpl
         //todo: get instance of type method parameter:  anyCommand.payload.unpackInto(instance);
         _logger.d('Found Parameters on request method: ${method}');
 
+        var arguments = [];
+        method.parameters.forEach((e) {
+          _logger.d('Parameter Type is: ${e.type}');
+          if (e.type.isAssignableTo(reflectType(GeneratedMessage))) {
+            _logger.d('Set parameter ${MirrorSystem.getName(e.simpleName)}');
+
+            //anyCommand.payload.unpackInto(e.defaultValue.reflectee as GeneratedMessage)
+            arguments.add(null);
+          } else if (e.type.isAssignableTo(reflectType(Context))) {
+            _logger.d('Set parameter ${MirrorSystem.getName(e.simpleName)}');
+            arguments.add(CommandContextImpl());
+          }
+        });
+
+        var instanceMirrorResult = reflect(instance).invoke(method.simpleName, arguments);
+        var result = Any.pack(instanceMirrorResult.reflectee);
+        _logger.d('\nResult: $instanceMirrorResult.\nType result:\n${result}');
+        return Optional.ofNullable(result);
+
       }
     }
     on Exception  {
@@ -168,7 +188,6 @@ class EventSourcedEntityHandlerImpl
       throw Exception('Error during handling command $Exception');
     }
 
-    return Optional.empty();
   }
 
   @override
