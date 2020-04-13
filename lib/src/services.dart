@@ -67,8 +67,8 @@ class EntityDiscoveryService extends EntityDiscoveryServiceBase {
 
   @override
   Future<Empty> reportError(ServiceCall call, UserFunctionError request) {
-    // TODO: implement reportError
-    return null;
+    _logger.e('Sidecar proxy return error $request');
+    return Future.value(Empty.getDefault());
   }
 
   Entity createEntity(String k, StatefulService v) {
@@ -129,6 +129,10 @@ class EventSourcedService extends EventSourcedServiceBase {
         _logger.d('Service found ${service.serviceName()}\n');
         var entityHandler = EventSourcedEntityHandlerFactory
             .getOrCreate(initMessage.entityId, service);
+
+        if(initMessage.hasSnapshot()) {
+          //Todo: Handle snapshot
+        }
 
       }
 
