@@ -1,10 +1,13 @@
+import 'dart:ffi';
 import 'dart:mirrors';
 
 import 'package:cloudstate/src/reflect_helper.dart';
 import 'package:cloudstate/src/services.dart';
+import 'package:fixnum/fixnum.dart';
 import 'package:grpc/src/server/call.dart';
 import 'package:logger/logger.dart';
 import 'package:optional/optional.dart';
+import 'package:protobuf/protobuf.dart';
 
 import '../cloudstate.dart';
 import 'generated/protocol/cloudstate/entity.pb.dart';
@@ -161,9 +164,18 @@ class EventSourcedEntityHandlerImpl
 
   @override
   void handleEvent(EventSourcedEvent anyEvent, EventSourcedContext context) {
-    // TODO: implement handleEvent
+    _logger.d('Handling grpc method $anyEvent');
     Context ctx =  EventSourcedEntityCreationContextImpl();
-    Object instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
+    var instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
+
+    var typeUrl = anyEvent.payload.typeUrl;
+    var type = typeUrl.split('.').last.toLowerCase();
+
+    var method = _eventHandlerMethods.values
+        .firstWhere((f) => f.parameters.length == 1 && type ==  MirrorSystem.getName(f.parameters[0].simpleName).toLowerCase() );
+
+    _logger.d('Method => $method');
+    ReflectHelper.invoke(instance, method, anyEvent.payload, context);
   }
 
   @override
@@ -288,17 +300,43 @@ abstract class CommandContext extends EventSourcedContext
 }
 
 class CommandContextImpl extends CommandContext {
+  static final _logger = Logger(
+    filter: null,
+    printer: LogfmtPrinter(),
+    output: ConsoleOutput(),
+  );
+
+  final EventSourcedEntityHandler entityHandler;
+  final Command command;
+  int sequence;
+  int snapshotEvery;
+  bool performSnapshot = false;
+
+  List<Any> events = [];
+  List<Failure> failures = [];
+
+  CommandContextImpl(this.entityHandler, this.command, this.sequence, this.snapshotEvery);
+
+  bool hasFailure() {
+    return failures.isNotEmpty;
+  }
+
+  bool hasSnapshot() {
+    return performSnapshot;
+  }
+
+  bool hasEvents() {
+    return events.isNotEmpty;
+  }
 
   @override
   int commandId() {
-    // TODO: implement commandId
-    return null;
+    return command.id.toInt();
   }
 
   @override
   String commandName() {
-    // TODO: implement commandName
-    return null;
+    return command.name;
   }
 
   @override
@@ -308,19 +346,35 @@ class CommandContextImpl extends CommandContext {
 
   @override
   void emit(Object event) {
-    // TODO: implement emit
+    if (failures.isEmpty) {
+      var anyEvent = Any.pack(event as GeneratedMessage);
+      sequence ??= 0;
+      var nextSequenceNumber = sequence + events.length  + 1;
+      // Todo: Handle event
+      var eventSeq = EventSourcedEvent.create()
+        ..sequence = Int64.parseInt(nextSequenceNumber.toString())
+        ..payload = anyEvent;
+      entityHandler.handleEvent(eventSeq, EventSourcedContextImpl());
+
+      events.add(anyEvent);
+      performSnapshot = (snapshotEvery > 0) &&
+          (performSnapshot || (nextSequenceNumber % snapshotEvery == 0));
+    }
+
   }
 
   @override
   String entityId() {
-    // TODO: implement entityId
-    return null;
+    return command.entityId;
   }
 
   @override
   RuntimeException fail(String errorMessage) {
-    // TODO: implement fail
-    return null;
+    _logger.e('Fail $errorMessage');
+    failures.add(Failure.create()
+        ..commandId = command.id
+        ..description = errorMessage);
+    return RuntimeException();
   }
 
   @override
@@ -330,8 +384,7 @@ class CommandContextImpl extends CommandContext {
 
   @override
   int sequenceNumber() {
-    // TODO: implement sequenceNumber
-    return null;
+    return sequence;
   }
 
   @override
@@ -428,4 +481,20 @@ class RuntimeException {
 }
 
 abstract class EventSourcedContext extends EntityContext {
+}
+
+class EventSourcedContextImpl extends EventSourcedContext {
+
+  @override
+  String entityId() {
+    // TODO: implement entityId
+    return null;
+  }
+
+  @override
+  ServiceCallFactory serviceCallFactory() {
+    // TODO: implement serviceCallFactory
+    return null;
+  }
+
 }

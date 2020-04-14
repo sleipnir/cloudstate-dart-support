@@ -109,7 +109,12 @@ class EventSourcedService extends EventSourcedServiceBase {
   }
 
   Stream<EventSourcedStreamOut> runtEntity(Stream<EventSourcedStreamIn> request) async* {
+
     EventSourcedStatefulService service;
+    String entityId;
+    int snapshotSequence;
+    EventSourcedEntityHandler entityHandler;
+
     await for (var stream in request) {
       _logger.d('Stream message received:\n$stream');
 
@@ -117,57 +122,110 @@ class EventSourcedService extends EventSourcedServiceBase {
         _logger.d('Stream Init Message:\n$stream');
 
         var initMessage = stream.init;
+        if (entityId == null || entityId != initMessage.entityId){
+          entityId = initMessage.entityId;
+        }
+
         if(!services.containsKey(initMessage.serviceName)){
           var failure = Failure.create()
-            ..description = 'Failed to locate service with name {init.ServiceName}';
+            ..description = 'Failed to locate service with name ${initMessage.serviceName}';
           yield EventSourcedStreamOut.create()
               ..failure = failure;
-          ;
         }
-        
+
         service = services[initMessage.serviceName] as EventSourcedStatefulService;
         _logger.d('Service found ${service.serviceName()}\n');
-        var entityHandler = EventSourcedEntityHandlerFactory
-            .getOrCreate(initMessage.entityId, service);
+        entityHandler = EventSourcedEntityHandlerFactory
+            .getOrCreate(entityId, service);
 
         if(initMessage.hasSnapshot()) {
           var eventSourcedSnapshot = initMessage.snapshot;
           var snapshot = eventSourcedSnapshot.snapshot;
-          var snapshotSequence = eventSourcedSnapshot.snapshotSequence;
+          snapshotSequence = eventSourcedSnapshot.snapshotSequence.toInt();
 
           entityHandler.handleSnapshot(
               eventSourcedSnapshot,
-              SnapshotContextImpl(initMessage.entityId, snapshotSequence.toInt()));
+              SnapshotContextImpl(initMessage.entityId, snapshotSequence));
         }
 
       }
 
       if (stream.hasCommand()){
         var commandMessage = stream.command;
-        _logger.d('Received Command Message:\n$commandMessage');
-        var entityHandler = EventSourcedEntityHandlerFactory
-            .getOrCreate(commandMessage.entityId, service);
+        if (entityId == null || entityId != commandMessage.entityId){
+          entityId = commandMessage.entityId;
+        }
 
+        _logger.d('Received Command Message:\n$commandMessage');
+        entityHandler = EventSourcedEntityHandlerFactory
+            .getOrCreate(entityId, service);
         _logger.d('Handling command...');
-        var optionalResult = entityHandler.handleCommand(commandMessage, CommandContextImpl());
+        var context = CommandContextImpl(entityHandler, commandMessage, snapshotSequence, service.snapshotEvery);
+        var optionalResult = entityHandler
+            .handleCommand(commandMessage, context);
+
         if (optionalResult.isPresent){
+
           var reply = Reply.create()
             ..payload = optionalResult.value;
 
           var clientAction = ClientAction.create()
             ..reply = reply;
 
+          if (context.hasFailure()) {
+            clientAction.failure = context.failures.first;
+          }
+
           var eventSourcedReply = EventSourcedReply.create()
             ..commandId = commandMessage.id
             ..clientAction = clientAction;
 
+          if (context.hasSnapshot()) {
+            //eventSourcedReply.snapshot
+          }
+
+          if (context.hasEvents()) {
+            _logger.d('Set events ${context.events}');
+            eventSourcedReply.events.addAll(context.events);
+          }
+
           _logger.d('Returning correct response to Proxy');
-          yield EventSourcedStreamOut.create()
-              ..reply = eventSourcedReply;
+          var evtReply = EventSourcedStreamOut.create()
+            ..reply = eventSourcedReply;
+
+         /* if (context.hasFailure()) {
+            evtReply.failure = context.failures.first;
+          }*/
+
+          yield evtReply;
         } else {
           _logger.d('Returning Empty response to Proxy');
+          if (context.hasFailure()) {
+            var clientAction = ClientAction.create()
+                ..failure = context.failures.first;
+
+            var eventSourcedReply = EventSourcedReply.create()
+              ..commandId = commandMessage.id
+              ..clientAction = clientAction;
+
+            yield EventSourcedStreamOut.create()
+              ..failure = context.failures.first
+              ..reply = eventSourcedReply;
+          }
           yield EventSourcedStreamOut.create();
         }
+
+      }
+
+      if (stream.hasEvent()) {
+        var eventMessage = stream.event;
+        _logger.d('Received Event Message:\n$eventMessage for entityId: $entityId');
+        entityHandler = EventSourcedEntityHandlerFactory
+            .getOrCreate(entityId, service);
+
+        _logger.d('Handling event...');
+        var context = EventSourcedContextImpl();
+        entityHandler.handleEvent(eventMessage, context);
 
       }
 

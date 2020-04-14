@@ -6,7 +6,7 @@ import 'generated/persistence/domain.pb.dart' as Domain;
 // ignore: library_prefixes
 import 'generated/shoppingcart.pb.dart' as Shoppingcart;
 
-@EventSourcedEntity('',1000)
+@EventSourcedEntity('',1)
 class ShoppingCartEntity {
   final Map<String, Shoppingcart.LineItem> _cart = {};
 

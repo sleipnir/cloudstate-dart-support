@@ -51,9 +51,9 @@ class ReflectHelper {
         _logger.d('Parameter Type is: ${e.type}');
         if (e.type.isAssignableTo(reflectType(GeneratedMessage))) {
           _logger.d('Set parameter ${MirrorSystem.getName(e.simpleName)}');
-
           var msg = ReflectHelper.createInstance(e.type.reflectedType);
           arguments.add(payload.unpackInto(msg as GeneratedMessage));
+          _logger.v('Argument added!');
         } else if (e.type.isAssignableTo(reflectType(Context))) {
           _logger.d('Set parameter ${MirrorSystem.getName(e.simpleName)}');
           arguments.add(context);
@@ -61,9 +61,17 @@ class ReflectHelper {
       });
 
       var instanceMirrorResult = reflect(instance).invoke(method.simpleName, arguments);
-      var result = Any.pack(instanceMirrorResult.reflectee);
-      _logger.d('\nResult: $instanceMirrorResult.\nType result:\n${result}');
-      return Optional.ofNullable(result);
+      _logger.v('Invoke response $instanceMirrorResult');
+      if (instanceMirrorResult != null && MirrorSystem.getName(instanceMirrorResult.type.simpleName) != 'Null') {
+        _logger.v('InstanceMirrorResult not null. ${MirrorSystem.getName(instanceMirrorResult.type.simpleName)}');
+        var result = Any.pack(instanceMirrorResult.reflectee);
+        _logger.d('\nResult: $instanceMirrorResult.\nType result:\n${result}');
+        return Optional.ofNullable(result);
+      } else {
+        //handle void or null responses
+        _logger.d('Handle void or null responses');
+        return Optional.empty();
+      }
 
     }
   }
