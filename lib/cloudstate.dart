@@ -12,7 +12,7 @@ import 'package:logger/logger.dart';
 import 'package:cloudstate/src/services.dart';
 
 class Cloudstate {
-  final Map<String, StatefulService> services = Map();
+  final Map<String, StatefulService> services = {};
 
   final _logger = Logger(
     filter: null,
