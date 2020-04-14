@@ -168,11 +168,11 @@ class EventSourcedEntityHandlerImpl
           if (e.type.isAssignableTo(reflectType(GeneratedMessage))) {
             _logger.d('Set parameter ${MirrorSystem.getName(e.simpleName)}');
 
-            //anyCommand.payload.unpackInto(e.defaultValue.reflectee as GeneratedMessage)
-            arguments.add(null);
+            var msg = createInstance(e.type.reflectedType);
+            arguments.add(anyCommand.payload.unpackInto(msg as GeneratedMessage));
           } else if (e.type.isAssignableTo(reflectType(Context))) {
             _logger.d('Set parameter ${MirrorSystem.getName(e.simpleName)}');
-            arguments.add(CommandContextImpl());
+            arguments.add(context);
           }
         });
 
