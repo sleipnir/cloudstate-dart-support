@@ -182,14 +182,14 @@ class EventSourcedEntityHandlerImpl
   void handleSnapshot(EventSourcedSnapshot anySnapshot, SnapshotContext context) {
     // TODO: implement handleSnapshot
     Context ctx =  EventSourcedEntityCreationContextImpl();
-    Object instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
+    var instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
   }
 
   @override
   Optional<Any> snapshot(SnapshotContext context) {
     // TODO: implement snapshot
     Context ctx =  EventSourcedEntityCreationContextImpl();
-    Object instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
+    var instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
     return null;
   }
 
@@ -350,10 +350,11 @@ class CommandContextImpl extends CommandContext {
       var anyEvent = Any.pack(event as GeneratedMessage);
       sequence ??= 0;
       var nextSequenceNumber = sequence + events.length  + 1;
-      // Todo: Handle event
+
       var eventSeq = EventSourcedEvent.create()
         ..sequence = Int64.parseInt(nextSequenceNumber.toString())
         ..payload = anyEvent;
+
       entityHandler.handleEvent(eventSeq, EventSourcedContextImpl());
 
       events.add(anyEvent);
