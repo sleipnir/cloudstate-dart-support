@@ -12,32 +12,41 @@ import 'package:protobuf/protobuf.dart' as $pb;
 import '../protobuf/any.pb.dart' as $3;
 
 class HttpBody extends $pb.GeneratedMessage {
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo('HttpBody', package: const $pb.PackageName('google.api'), createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('HttpBody',
+      package: const $pb.PackageName('google.api'), createEmptyInstance: create)
     ..aOS(1, 'contentType')
     ..a<$core.List<$core.int>>(2, 'data', $pb.PbFieldType.OY)
     ..pc<$3.Any>(3, 'extensions', $pb.PbFieldType.PM, subBuilder: $3.Any.create)
-    ..hasRequiredFields = false
-  ;
+    ..hasRequiredFields = false;
 
   HttpBody._() : super();
   factory HttpBody() => create();
-  factory HttpBody.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory HttpBody.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory HttpBody.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory HttpBody.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
   HttpBody clone() => HttpBody()..mergeFromMessage(this);
-  HttpBody copyWith(void Function(HttpBody) updates) => super.copyWith((message) => updates(message as HttpBody));
+  HttpBody copyWith(void Function(HttpBody) updates) =>
+      super.copyWith((message) => updates(message as HttpBody));
   $pb.BuilderInfo get info_ => _i;
   @$core.pragma('dart2js:noInline')
   static HttpBody create() => HttpBody._();
   HttpBody createEmptyInstance() => create();
   static $pb.PbList<HttpBody> createRepeated() => $pb.PbList<HttpBody>();
   @$core.pragma('dart2js:noInline')
-  static HttpBody getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<HttpBody>(create);
+  static HttpBody getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<HttpBody>(create);
   static HttpBody _defaultInstance;
 
   @$pb.TagNumber(1)
   $core.String get contentType => $_getSZ(0);
   @$pb.TagNumber(1)
-  set contentType($core.String v) { $_setString(0, v); }
+  set contentType($core.String v) {
+    $_setString(0, v);
+  }
+
   @$pb.TagNumber(1)
   $core.bool hasContentType() => $_has(0);
   @$pb.TagNumber(1)
@@ -46,7 +55,10 @@ class HttpBody extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   $core.List<$core.int> get data => $_getN(1);
   @$pb.TagNumber(2)
-  set data($core.List<$core.int> v) { $_setBytes(1, v); }
+  set data($core.List<$core.int> v) {
+    $_setBytes(1, v);
+  }
+
   @$pb.TagNumber(2)
   $core.bool hasData() => $_has(1);
   @$pb.TagNumber(2)
@@ -55,4 +67,3 @@ class HttpBody extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   $core.List<$3.Any> get extensions => $_getList(2);
 }
-

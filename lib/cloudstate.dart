@@ -33,17 +33,12 @@ class Cloudstate {
 
     _config = Config(port, address);
     services[serviceName] = EventSourcedStatefulService(serviceName, entity, 1);
-
   }
 
   Future<void> start([Config config]) {
     if (config == null) {
-      return CloudstateRunner(_config, services)
-          .start();
+      return CloudstateRunner(_config, services).start();
     }
-    return CloudstateRunner(config, services)
-        .start();
+    return CloudstateRunner(config, services).start();
   }
-
 }
-

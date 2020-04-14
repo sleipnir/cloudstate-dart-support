@@ -1,4 +1,3 @@
-
 import 'dart:mirrors';
 
 import 'package:logger/logger.dart';
@@ -15,9 +14,12 @@ class ReflectHelper {
     output: ConsoleOutput(),
   );
 
-  static Object createInstance(Type type, [String persistenceId, Context context, Symbol constructor, List
-  arguments, Map<Symbol, dynamic> namedArguments]) {
-
+  static Object createInstance(Type type,
+      [String persistenceId,
+      Context context,
+      Symbol constructor,
+      List arguments,
+      Map<Symbol, dynamic> namedArguments]) {
     if (type == null) {
       throw ArgumentError('Type: $type');
     }
@@ -27,18 +29,21 @@ class ReflectHelper {
 
     var typeMirror = reflectType(type);
     if (typeMirror is ClassMirror) {
-      return typeMirror.newInstance(constructor, arguments,namedArguments)
+      return typeMirror
+          .newInstance(constructor, arguments, namedArguments)
           .reflectee;
     } else {
       throw ArgumentError("Cannot create the instance of the type '$type'.");
     }
   }
 
-  static Optional<Any> invoke(Object instance, MethodMirror method, Any payload, Context context) {
-    if (method.parameters.isEmpty){
+  static Optional<Any> invoke(
+      Object instance, MethodMirror method, Any payload, Context context) {
+    if (method.parameters.isEmpty) {
       _logger.v('Using $method!');
 
-      var instanceMirrorResult = reflect(instance).invoke(method.simpleName, []);
+      var instanceMirrorResult =
+          reflect(instance).invoke(method.simpleName, []);
       var result = Any.pack(instanceMirrorResult.reflectee);
       _logger.d('\nResult: $instanceMirrorResult.\nType result:\n${result}');
 
@@ -60,10 +65,14 @@ class ReflectHelper {
         }
       });
 
-      var instanceMirrorResult = reflect(instance).invoke(method.simpleName, arguments);
+      var instanceMirrorResult =
+          reflect(instance).invoke(method.simpleName, arguments);
       _logger.v('Invoke response $instanceMirrorResult');
-      if (instanceMirrorResult != null && MirrorSystem.getName(instanceMirrorResult.type.simpleName) != 'Null') {
-        _logger.v('InstanceMirrorResult not null. ${MirrorSystem.getName(instanceMirrorResult.type.simpleName)}');
+      if (instanceMirrorResult != null &&
+          MirrorSystem.getName(instanceMirrorResult.type.simpleName) !=
+              'Null') {
+        _logger.v(
+            'InstanceMirrorResult not null. ${MirrorSystem.getName(instanceMirrorResult.type.simpleName)}');
         var result = Any.pack(instanceMirrorResult.reflectee);
         _logger.d('\nResult: $instanceMirrorResult.\nType result:\n${result}');
         return Optional.ofNullable(result);
@@ -72,7 +81,6 @@ class ReflectHelper {
         _logger.d('Handle void or null responses');
         return Optional.empty();
       }
-
     }
   }
 
@@ -83,14 +91,17 @@ class ReflectHelper {
         .toList();
   }
 
-  static Map<String, MethodMirror> getMethodsByAnnotation(List<MethodMirror> allDeclaredMethods, Type annotation) {
+  static Map<String, MethodMirror> getMethodsByAnnotation(
+      List<MethodMirror> allDeclaredMethods, Type annotation) {
     // ignore: omit_local_variable_types
     final Map<String, MethodMirror> methods = {};
     var annotationMirror = reflectClass(annotation);
     allDeclaredMethods
-        .where((elem) => elem.metadata.where((test) => test.type == annotationMirror) != null)
-        .forEach((e) => methods[capitalize(MirrorSystem.getName(e.simpleName))] = e);
+        .where((elem) =>
+            elem.metadata.where((test) => test.type == annotationMirror) !=
+            null)
+        .forEach(
+            (e) => methods[capitalize(MirrorSystem.getName(e.simpleName))] = e);
     return methods;
   }
-
 }

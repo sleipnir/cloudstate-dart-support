@@ -7,6 +7,7 @@ void main() {
   Cloudstate()
     ..port = 8089
     ..address = 'localhost'
-    ..registerEventSourcedEntity('com.example.shoppingcart.ShoppingCart', ShoppingCartEntity)
+    ..registerEventSourcedEntity(
+        'com.example.shoppingcart.ShoppingCart', ShoppingCartEntity)
     ..start();
 }

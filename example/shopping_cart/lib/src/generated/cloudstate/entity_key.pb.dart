@@ -10,9 +10,9 @@ import 'dart:core' as $core;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 class Entity_key {
-  static final $pb.Extension entityKey = $pb.Extension<$core.bool>('google.protobuf.FieldOptions', 'entityKey', 50002, $pb.PbFieldType.OB);
+  static final $pb.Extension entityKey = $pb.Extension<$core.bool>(
+      'google.protobuf.FieldOptions', 'entityKey', 50002, $pb.PbFieldType.OB);
   static void registerAllExtensions($pb.ExtensionRegistry registry) {
     registry.add(entityKey);
   }
 }
-

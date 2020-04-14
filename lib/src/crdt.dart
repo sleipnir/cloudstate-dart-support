@@ -1,4 +1,3 @@
-
 class CrdtCommandHandler {
   final String name;
   const CrdtCommandHandler([this.name = '']);
@@ -7,4 +6,3 @@ class CrdtCommandHandler {
 class CrdtEntity {
   const CrdtEntity();
 }
-

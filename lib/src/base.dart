@@ -1,4 +1,3 @@
-
 import 'package:grpc/grpc.dart';
 import 'package:logger/logger.dart';
 import 'package:cloudstate/src/services.dart';
@@ -61,7 +60,7 @@ abstract class EffectContext extends Context {
   ///
   /// @param effect The service call to make as an effect effect.
   ///
-  void effect(ServiceCall effect, [bool synchronous = false]) ;
+  void effect(ServiceCall effect, [bool synchronous = false]);
 }
 
 /// Root context for all contexts that pertain to entities, that is, things that are addressable via
@@ -78,7 +77,6 @@ abstract class EntityContext extends Context {
 /// This is used to create's that can be passed to
 /// EffectContext#effect(ServiceCall) and ClientActionContext#forward(ServiceCall) .
 class ServiceCallFactory<T> {
-
   /// Lookup a reference to the service call with the given name and method.
   ///
   /// @param serviceName The fully qualified name of a gRPC service that this stateful service
@@ -91,26 +89,21 @@ class ServiceCallFactory<T> {
   /// @throws IllegalArgumentException if the accepted input type for the method doesn't match <code>
   ///     messageType</code>.
   // ignore: missing_return
-  ServiceCallRef<T> lookup(String serviceName, String methodName, Type messageType) {
-
-  }
-
+  ServiceCallRef<T> lookup(
+      String serviceName, String methodName, Type messageType) {}
 }
 
 /// A reference to a call on a service.
 ///
 /// @param <T> The type of message the call accepts.
 class ServiceCallRef<T> {
-
   /// Create a call from this reference, using the given message as the message to pass to it when
   /// it's invoked.
   ///
   /// @param message The message to pass to the method.
   /// @return A service call that can be used as a forward or effect.
   // ignore: missing_return
-  ServiceCallClass createCall(T message){
-
-  }
+  ServiceCallClass createCall(T message) {}
 }
 
 class ServiceCallClass {
@@ -118,13 +111,13 @@ class ServiceCallClass {
   ///
   /// @return The reference to the call.
   // ignore: missing_return
-  ServiceCallRef ref(){}
+  ServiceCallRef ref() {}
 
   /// The message to pass to the call when the call is invoked.
   ///
   /// @return The message to pass to the call, serialized as an {@link Any}.
   // ignore: missing_return
-  Any message(){}
+  Any message() {}
 }
 
 String capitalize(String string) {

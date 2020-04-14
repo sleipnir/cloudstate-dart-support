@@ -12,4 +12,3 @@ const Eventing$json = const {
     const {'1': 'out', '3': 2, '4': 1, '5': 9, '10': 'out'},
   ],
 };
-

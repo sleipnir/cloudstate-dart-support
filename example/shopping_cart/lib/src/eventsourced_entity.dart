@@ -6,25 +6,22 @@ import 'generated/persistence/domain.pb.dart' as Domain;
 // ignore: library_prefixes
 import 'generated/shoppingcart.pb.dart' as Shoppingcart;
 
-@EventSourcedEntity('',1)
+@EventSourcedEntity('', 1)
 class ShoppingCartEntity {
   final Map<String, Shoppingcart.LineItem> _cart = {};
 
   @Snapshot()
   Domain.Cart snapshot() {
     return Domain.Cart.create()
-        ..items.addAll(
-            _cart.values.map((e) => convertShoppingItem(e))
-            .toList());
+      ..items.addAll(_cart.values.map((e) => convertShoppingItem(e)).toList());
   }
 
   @SnapshotHandler()
   void handleSnapshot(Domain.Cart cart) {
     _cart.clear();
     for (var item in cart.items) {
-      _cart[item.productId] =  convert(item);
+      _cart[item.productId] = convert(item);
     }
-
   }
 
   @EventHandler()
@@ -33,8 +30,7 @@ class ShoppingCartEntity {
     if (item == null) {
       item = convert(itemAdded.item);
     } else {
-      item =
-          item..quantity = item.quantity + itemAdded.item.quantity;
+      item = item..quantity = item.quantity + itemAdded.item.quantity;
     }
     _cart[item.productId] = item;
   }
@@ -46,8 +42,7 @@ class ShoppingCartEntity {
 
   @EventSourcedCommandHandler()
   Shoppingcart.Cart getCart() {
-    return Shoppingcart.Cart.create()
-        ..items.addAll(_cart.values);
+    return Shoppingcart.Cart.create()..items.addAll(_cart.values);
   }
 
   @EventSourcedCommandHandler()
@@ -69,7 +64,8 @@ class ShoppingCartEntity {
   @EventSourcedCommandHandler()
   Empty removeItem(Shoppingcart.RemoveLineItem item, CommandContext ctx) {
     if (!_cart.containsKey(item.productId)) {
-      ctx.fail('Cannot remove item ${item.productId} because it is not in the cart.');
+      ctx.fail(
+          'Cannot remove item ${item.productId} because it is not in the cart.');
     }
     ctx.emit(Domain.ItemRemoved.create()..productId = item.productId);
     return Empty.getDefault();
@@ -77,16 +73,15 @@ class ShoppingCartEntity {
 
   Shoppingcart.LineItem convert(Domain.LineItem item) {
     return Shoppingcart.LineItem.create()
-        ..productId = item.productId
-        ..name = item.name
-        ..quantity = item.quantity;
+      ..productId = item.productId
+      ..name = item.name
+      ..quantity = item.quantity;
   }
 
   Domain.LineItem convertShoppingItem(Shoppingcart.LineItem item) {
     return Domain.LineItem.create()
-        ..productId = item.productId
-        ..name = item.name
-        ..quantity = item.quantity;
+      ..productId = item.productId
+      ..name = item.name
+      ..quantity = item.quantity;
   }
-
 }

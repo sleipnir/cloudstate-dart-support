@@ -14,13 +14,13 @@ import 'package:grpc/src/server/call.dart';
 
 class StatefulService {
   // ignore: missing_return
-  String serviceName(){}
+  String serviceName() {}
   // ignore: missing_return
   Type entity() {}
   // ignore: missing_return
-  String entityType(){}
+  String entityType() {}
   // ignore: missing_return
-  String persistenceId(){}
+  String persistenceId() {}
 }
 
 class EntityDiscoveryService extends EntityDiscoveryServiceBase {
@@ -51,7 +51,7 @@ class EntityDiscoveryService extends EntityDiscoveryServiceBase {
 
     // ignore: omit_local_variable_types, prefer_collection_literals
     final List<Entity> entities = List();
-    services.forEach((k,v) {
+    services.forEach((k, v) {
       entities.add(createEntity(k, v));
     });
 
@@ -72,13 +72,13 @@ class EntityDiscoveryService extends EntityDiscoveryServiceBase {
   }
 
   Entity createEntity(String k, StatefulService v) {
-    print('PersistenceId -> ${v.persistenceId()}. ServiceName -> ${v.serviceName()}');
+    print(
+        'PersistenceId -> ${v.persistenceId()}. ServiceName -> ${v.serviceName()}');
     return Entity()
       ..serviceName = v.serviceName()
       ..entityType = v.entityType()
       ..persistenceId = v.persistenceId();
   }
-
 }
 
 class EventSourcedService extends EventSourcedServiceBase {
@@ -103,13 +103,14 @@ class EventSourcedService extends EventSourcedServiceBase {
   /// persisted the entity should handle itself, applying them to its own state, as if they had
   /// arrived as events when the event stream was being replayed on load.
   @override
-  Stream<EventSourcedStreamOut> handle(ServiceCall call, Stream<EventSourcedStreamIn> request) {
+  Stream<EventSourcedStreamOut> handle(
+      ServiceCall call, Stream<EventSourcedStreamIn> request) {
     _logger.d('Received request from Proxy:\n$request');
     return runtEntity(request);
   }
 
-  Stream<EventSourcedStreamOut> runtEntity(Stream<EventSourcedStreamIn> request) async* {
-
+  Stream<EventSourcedStreamOut> runtEntity(
+      Stream<EventSourcedStreamIn> request) async* {
     EventSourcedStatefulService service;
     String entityId;
     int snapshotSequence;
@@ -122,55 +123,52 @@ class EventSourcedService extends EventSourcedServiceBase {
         _logger.d('Stream Init Message:\n$stream');
 
         var initMessage = stream.init;
-        if (entityId == null || entityId != initMessage.entityId){
+        if (entityId == null || entityId != initMessage.entityId) {
           entityId = initMessage.entityId;
         }
 
-        if(!services.containsKey(initMessage.serviceName)){
+        if (!services.containsKey(initMessage.serviceName)) {
           var failure = Failure.create()
-            ..description = 'Failed to locate service with name ${initMessage.serviceName}';
-          yield EventSourcedStreamOut.create()
-              ..failure = failure;
+            ..description =
+                'Failed to locate service with name ${initMessage.serviceName}';
+          yield EventSourcedStreamOut.create()..failure = failure;
         }
 
-        service = services[initMessage.serviceName] as EventSourcedStatefulService;
+        service =
+            services[initMessage.serviceName] as EventSourcedStatefulService;
         _logger.d('Service found ${service.serviceName()}\n');
-        entityHandler = EventSourcedEntityHandlerFactory
-            .getOrCreate(entityId, service);
+        entityHandler =
+            EventSourcedEntityHandlerFactory.getOrCreate(entityId, service);
 
-        if(initMessage.hasSnapshot()) {
+        if (initMessage.hasSnapshot()) {
           var eventSourcedSnapshot = initMessage.snapshot;
           var snapshot = eventSourcedSnapshot.snapshot;
           snapshotSequence = eventSourcedSnapshot.snapshotSequence.toInt();
 
-          entityHandler.handleSnapshot(
-              eventSourcedSnapshot,
+          entityHandler.handleSnapshot(eventSourcedSnapshot,
               SnapshotContextImpl(initMessage.entityId, snapshotSequence));
         }
-
       }
 
-      if (stream.hasCommand()){
+      if (stream.hasCommand()) {
         var commandMessage = stream.command;
-        if (entityId == null || entityId != commandMessage.entityId){
+        if (entityId == null || entityId != commandMessage.entityId) {
           entityId = commandMessage.entityId;
         }
 
         _logger.d('Received Command Message:\n$commandMessage');
-        entityHandler = EventSourcedEntityHandlerFactory
-            .getOrCreate(entityId, service);
+        entityHandler =
+            EventSourcedEntityHandlerFactory.getOrCreate(entityId, service);
         _logger.d('Handling command...');
-        var context = CommandContextImpl(entityHandler, commandMessage, snapshotSequence, service.snapshotEvery);
-        var optionalResult = entityHandler
-            .handleCommand(commandMessage, context);
+        var context = CommandContextImpl(entityHandler, commandMessage,
+            snapshotSequence, service.snapshotEvery);
+        var optionalResult =
+            entityHandler.handleCommand(commandMessage, context);
 
-        if (optionalResult.isPresent){
+        if (optionalResult.isPresent) {
+          var reply = Reply.create()..payload = optionalResult.value;
 
-          var reply = Reply.create()
-            ..payload = optionalResult.value;
-
-          var clientAction = ClientAction.create()
-            ..reply = reply;
+          var clientAction = ClientAction.create()..reply = reply;
 
           if (context.hasFailure()) {
             clientAction.failure = context.failures.first;
@@ -193,7 +191,7 @@ class EventSourcedService extends EventSourcedServiceBase {
           var evtReply = EventSourcedStreamOut.create()
             ..reply = eventSourcedReply;
 
-         /* if (context.hasFailure()) {
+          /* if (context.hasFailure()) {
             evtReply.failure = context.failures.first;
           }*/
 
@@ -202,7 +200,7 @@ class EventSourcedService extends EventSourcedServiceBase {
           _logger.d('Returning Empty response to Proxy');
           if (context.hasFailure()) {
             var clientAction = ClientAction.create()
-                ..failure = context.failures.first;
+              ..failure = context.failures.first;
 
             var eventSourcedReply = EventSourcedReply.create()
               ..commandId = commandMessage.id
@@ -214,32 +212,27 @@ class EventSourcedService extends EventSourcedServiceBase {
           }
           yield EventSourcedStreamOut.create();
         }
-
       }
 
       if (stream.hasEvent()) {
         var eventMessage = stream.event;
-        _logger.d('Received Event Message:\n$eventMessage for entityId: $entityId');
-        entityHandler = EventSourcedEntityHandlerFactory
-            .getOrCreate(entityId, service);
+        _logger.d(
+            'Received Event Message:\n$eventMessage for entityId: $entityId');
+        entityHandler =
+            EventSourcedEntityHandlerFactory.getOrCreate(entityId, service);
 
         _logger.d('Handling event...');
         var context = EventSourcedContextImpl();
         entityHandler.handleEvent(eventMessage, context);
-
       }
-
     }
   }
-
 }
 
 class CrdtServce extends CrdtServiceBase {
-
   @override
   Stream<CrdtStreamOut> handle(ServiceCall call, Stream<CrdtStreamIn> request) {
     // TODO: implement handle
     return null;
   }
-
 }
