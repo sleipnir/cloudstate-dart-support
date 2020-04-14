@@ -1,10 +1,10 @@
 import 'dart:mirrors';
 
+import 'package:cloudstate/src/reflect_helper.dart';
 import 'package:cloudstate/src/services.dart';
 import 'package:grpc/src/server/call.dart';
 import 'package:logger/logger.dart';
 import 'package:optional/optional.dart';
-import 'package:protobuf/protobuf.dart';
 
 import '../cloudstate.dart';
 import 'generated/protocol/cloudstate/entity.pb.dart';
@@ -150,38 +150,7 @@ class EventSourcedEntityHandlerImpl
 
       _logger.d('Handling grpc method ${anyCommand.name}');
       var method = _commandHandlerMethods[anyCommand.name];
-      if (method.parameters.isEmpty){
-        _logger.v('Using $method!');
-
-        var instanceMirrorResult = reflect(instance).invoke(method.simpleName, []);
-        var result = Any.pack(instanceMirrorResult.reflectee);
-        _logger.d('\nResult: $instanceMirrorResult.\nType result:\n${result}');
-
-        return Optional.of(result);
-      } else {
-        //todo: get instance of type method parameter:  anyCommand.payload.unpackInto(instance);
-        _logger.d('Found Parameters on request method: ${method}');
-
-        var arguments = [];
-        method.parameters.forEach((e) {
-          _logger.d('Parameter Type is: ${e.type}');
-          if (e.type.isAssignableTo(reflectType(GeneratedMessage))) {
-            _logger.d('Set parameter ${MirrorSystem.getName(e.simpleName)}');
-
-            var msg = createInstance(e.type.reflectedType);
-            arguments.add(anyCommand.payload.unpackInto(msg as GeneratedMessage));
-          } else if (e.type.isAssignableTo(reflectType(Context))) {
-            _logger.d('Set parameter ${MirrorSystem.getName(e.simpleName)}');
-            arguments.add(context);
-          }
-        });
-
-        var instanceMirrorResult = reflect(instance).invoke(method.simpleName, arguments);
-        var result = Any.pack(instanceMirrorResult.reflectee);
-        _logger.d('\nResult: $instanceMirrorResult.\nType result:\n${result}');
-        return Optional.ofNullable(result);
-
-      }
+      return ReflectHelper.invoke(instance, method, anyCommand.payload, context);
     }
     on Exception  {
       _logger.e('Error during handling command $Exception');
@@ -215,26 +184,7 @@ class EventSourcedEntityHandlerImpl
   Optional<Object> createEntityInstance(String persistenceId, Context context) {
     //todo: Create instance passing correct persistenceId and context values
     _logger.v('Creating Entity Instance...');
-    return Optional.of(createInstance(service.entity()));
-  }
-
-  Object createInstance(Type type, [Symbol constructor, List
-      arguments, Map<Symbol, dynamic> namedArguments]) {
-
-    if (type == null) {
-      throw ArgumentError('Type: $type');
-    }
-
-    constructor ??= const Symbol('');
-    arguments ??= const [];
-
-    var typeMirror = reflectType(type);
-    if (typeMirror is ClassMirror) {
-      return typeMirror.newInstance(constructor, arguments,namedArguments)
-          .reflectee;
-    } else {
-      throw ArgumentError("Cannot create the instance of the type '$type'.");
-    }
+    return Optional.of(ReflectHelper.createInstance(service.entity(), persistenceId, context));
   }
 
   Object postConstruct(Object entity) {
@@ -243,10 +193,7 @@ class EventSourcedEntityHandlerImpl
     _entityClassMirror = _entityInstanceMirror.type;
 
     if (_allDeclaredMethods.isEmpty) {
-      _allDeclaredMethods = _entityClassMirror.declarations.values
-          .where((d) => d is MethodMirror && !d.isConstructor)
-          .map((f) => f as MethodMirror)
-          .toList();
+      _allDeclaredMethods = ReflectHelper.getAllMethods(_entityClassMirror);
 
       _logger.v(
           'Found ${_allDeclaredMethods.length} methods in Entity '
@@ -262,31 +209,23 @@ class EventSourcedEntityHandlerImpl
   }
 
   void processSnapshotMethods(List<MethodMirror> allDeclaredMethods) {
-    var snapshotAnnotationMirror = reflectClass(Snapshot);
-    allDeclaredMethods
-        .where((elem) => elem.metadata.where((test) => test.type == snapshotAnnotationMirror) != null)
-        .forEach((e) => _snapshotMethods[capitalize(MirrorSystem.getName(e.simpleName))] = e);
+    _snapshotMethods
+        .addAll(ReflectHelper.getMethodsByAnnotation(allDeclaredMethods, Snapshot));
   }
 
   void processSnapshotHandlerMethods(List<MethodMirror> allDeclaredMethods) {
-    var snapshotAnnotationHandlerMirror = reflectClass(SnapshotHandler);
-    allDeclaredMethods
-        .where((elem) => elem.metadata.where((test) => test.type == snapshotAnnotationHandlerMirror) != null)
-        .forEach((e) => _snapshotHandlerMethods[capitalize(MirrorSystem.getName(e.simpleName))] = e);
+    _snapshotHandlerMethods
+        .addAll(ReflectHelper.getMethodsByAnnotation(allDeclaredMethods, SnapshotHandler));
   }
 
   void processCommandMethods(List<MethodMirror> allDeclaredMethods) {
-    var commandAnnotationHandlerMirror = reflectClass(EventSourcedCommandHandler);
-    allDeclaredMethods
-        .where((elem) => elem.metadata.where((test) => test.type == commandAnnotationHandlerMirror) != null)
-        .forEach((e) => _commandHandlerMethods[capitalize(MirrorSystem.getName(e.simpleName))] = e);
+    _commandHandlerMethods
+        .addAll(ReflectHelper.getMethodsByAnnotation(allDeclaredMethods, EventSourcedCommandHandler));
   }
 
   void processEventMethods(List<MethodMirror> allDeclaredMethods) {
-    var eventAnnotationHandlerMirror = reflectClass(EventHandler);
-    allDeclaredMethods
-        .where((elem) => elem.metadata.where((test) => test.type == eventAnnotationHandlerMirror) != null)
-        .forEach((e) => _commandHandlerMethods[capitalize(MirrorSystem.getName(e.simpleName))] = e);
+    _eventHandlerMethods
+        .addAll(ReflectHelper.getMethodsByAnnotation(allDeclaredMethods, EventHandler));
   }
   
 }
