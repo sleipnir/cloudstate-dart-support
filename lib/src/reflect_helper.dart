@@ -26,8 +26,8 @@ class ReflectHelper {
       throw ArgumentError('Type: $type');
     }
 
-    constructor ??= const Symbol('');
     arguments ??= [];
+    constructor ??= Symbol('');
 
     var typeMirror = reflectType(type);
     if (typeMirror is ClassMirror) {
@@ -44,13 +44,23 @@ class ReflectHelper {
       }
 
       _logger.d('The entity defines one or more constructors. Found ${constructors.length} constructors');
-
+      var topLevel = false;
       if (callNonDefaultConstructor) {
         arguments.clear();
-        constructors.forEach((constructor) {
-          _logger.v('Constructor found $constructor');
-          if (constructor is MethodMirror) {
-            var parameters = constructor.parameters;
+        constructors.forEach((construct) {
+          _logger.v('Constructor found $construct');
+          if (construct is MethodMirror) {
+            constructor = construct.constructorName;
+            _logger.v( 
+                'Constructor: ${MirrorSystem.getName(construct.constructorName)} => '
+                    'isConstConstructor[${construct.isConstConstructor}]. '
+                    'isTopLevel[${construct.isTopLevel}]. '
+                    'isStatic[${construct.isStatic}]. '
+                    'isFactoryConstructor[${construct.isFactoryConstructor}]. '
+                    'isRegularMethod[${construct.isRegularMethod}]. '
+                    'isExtensionMember[${construct.isExtensionMember}]');
+
+            var parameters = construct.parameters;
             _logger.v('Constructor parameters $parameters');
             for (var param in parameters) {
               _logger.v('Parameter: $param');

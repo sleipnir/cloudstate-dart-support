@@ -13,10 +13,10 @@ class ShoppingCartEntity {
   String entityId;
   Context context;
 
-  ShoppingCartEntity(@EntityId() String entityId, Context context){
+  ShoppingCartEntity.create(@EntityId() String entityId, Context context) {
     this.entityId = entityId;
     this.context = context;
-    print('Entity [$entityId]: $entityId. Context: $context');
+    print('Entity $entityId. Context: $context');
   }
 
   @Snapshot()
