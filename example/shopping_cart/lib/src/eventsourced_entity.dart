@@ -10,6 +10,15 @@ import 'generated/shoppingcart.pb.dart' as Shoppingcart;
 class ShoppingCartEntity {
   final Map<String, Shoppingcart.LineItem> _cart = {};
 
+  String entityId;
+  Context context;
+
+  ShoppingCartEntity(@EntityId() String entityId, Context context){
+    this.entityId = entityId;
+    this.context = context;
+    print('Entity [$entityId]: $entityId. Context: $context');
+  }
+
   @Snapshot()
   Domain.Cart snapshot() {
     return Domain.Cart.create()

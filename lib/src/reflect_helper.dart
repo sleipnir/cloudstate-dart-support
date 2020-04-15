@@ -15,20 +15,67 @@ class ReflectHelper {
   );
 
   static Object createInstance(Type type,
-      [String persistenceId,
+      [String entityId,
       Context context,
+      bool callNonDefaultConstructor = false,
       Symbol constructor,
       List arguments,
       Map<Symbol, dynamic> namedArguments]) {
+
     if (type == null) {
       throw ArgumentError('Type: $type');
     }
 
     constructor ??= const Symbol('');
-    arguments ??= const [];
+    arguments ??= [];
 
     var typeMirror = reflectType(type);
     if (typeMirror is ClassMirror) {
+      var constructors = List.from(
+          typeMirror.declarations.values.where((declare) {
+            return declare is MethodMirror && declare.isConstructor;
+          })
+      );
+      
+      if (constructors.isEmpty) {
+        return typeMirror
+            .newInstance(constructor, arguments, namedArguments)
+            .reflectee;
+      }
+
+      _logger.d('The entity defines one or more constructors. Found ${constructors.length} constructors');
+
+      if (callNonDefaultConstructor) {
+        arguments.clear();
+        constructors.forEach((constructor) {
+          _logger.v('Constructor found $constructor');
+          if (constructor is MethodMirror) {
+            var parameters = constructor.parameters;
+            _logger.v('Constructor parameters $parameters');
+            for (var param in parameters) {
+              _logger.v('Parameter: $param');
+
+              if (param.type.isAssignableTo(reflectType(String))) {
+                _logger.v('Found String parameter');
+                var metadata = param.metadata;
+                var annotationMirror = reflectClass(EntityId);
+
+                var instanceMirror = metadata.firstWhere((elem) => elem.type == annotationMirror);
+                if (instanceMirror != null) {
+                  _logger.v('Set entityId[$entityId] in constructor parameter');
+                  arguments.add(entityId);
+                }
+              }
+
+              if (param.type.isAssignableTo(reflectType(Context))) {
+                _logger.v('Found Context parameter');
+                arguments.add(context);
+              }
+            }
+          }
+        });
+      }
+
       return typeMirror
           .newInstance(constructor, arguments, namedArguments)
           .reflectee;

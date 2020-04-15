@@ -191,10 +191,6 @@ class EventSourcedService extends EventSourcedServiceBase {
           var evtReply = EventSourcedStreamOut.create()
             ..reply = eventSourcedReply;
 
-          /* if (context.hasFailure()) {
-            evtReply.failure = context.failures.first;
-          }*/
-
           yield evtReply;
         } else {
           _logger.d('Returning Empty response to Proxy');
@@ -216,13 +212,13 @@ class EventSourcedService extends EventSourcedServiceBase {
 
       if (stream.hasEvent()) {
         var eventMessage = stream.event;
+        var context = EventSourcedContextImpl(entityId);
         _logger.d(
             'Received Event Message:\n$eventMessage for entityId: $entityId');
         entityHandler =
             EventSourcedEntityHandlerFactory.getOrCreate(entityId, service);
 
         _logger.d('Handling event...');
-        var context = EventSourcedContextImpl();
         entityHandler.handleEvent(eventMessage, context);
       }
     }

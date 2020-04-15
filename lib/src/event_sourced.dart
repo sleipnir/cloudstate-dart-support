@@ -96,7 +96,7 @@ class EventSourcedEntityHandlerFactory {
 
 class EntityFactory {
   // ignore: missing_return
-  Object getOrCreateEntityInstance(String persistenceId, Context context) {}
+  Object getOrCreateEntityInstance(String entityId, EventSourcedContext context) {}
 }
 
 class EventSourcedEntityHandler {
@@ -136,12 +136,12 @@ class EventSourcedEntityHandlerImpl
   EventSourcedEntityHandlerImpl(this.persistenceId, this.service);
 
   @override
-  Object getOrCreateEntityInstance(String persistenceId, Context context) {
+  Object getOrCreateEntityInstance(String entityId, EventSourcedContext context) {
     if (entityInstanceOptional.isPresent) {
       _logger.d('Get Entity instance from cache!');
       return entityInstanceOptional.value;
     }
-    entityInstanceOptional = createEntityInstance(persistenceId, context);
+    entityInstanceOptional = createEntityInstance(entityId, context, true);
     return postConstruct(entityInstanceOptional.value);
   }
 
@@ -149,8 +149,7 @@ class EventSourcedEntityHandlerImpl
   Optional<Any> handleCommand(Command anyCommand, CommandContext context) {
     try {
       _logger.v('Creating EventSourcedEntityCreationContext...');
-      Context ctx = EventSourcedEntityCreationContextImpl();
-      var instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
+      var instance = getOrCreateEntityInstance(anyCommand.entityId, context);
       if (!_commandHandlerMethods.containsKey(anyCommand.name)) {
         throw Exception('Method ${anyCommand.name} not found!');
       }
@@ -168,8 +167,7 @@ class EventSourcedEntityHandlerImpl
   @override
   void handleEvent(EventSourcedEvent anyEvent, EventSourcedContext context) {
     _logger.d('Handling grpc method $anyEvent');
-    Context ctx = EventSourcedEntityCreationContextImpl();
-    var instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
+    var instance = getOrCreateEntityInstance(context.entityId(), context);
 
     var typeUrl = anyEvent.payload.typeUrl;
     var type = typeUrl.split('.').last.toLowerCase();
@@ -186,23 +184,21 @@ class EventSourcedEntityHandlerImpl
   void handleSnapshot(
       EventSourcedSnapshot anySnapshot, SnapshotContext context) {
     // TODO: implement handleSnapshot
-    Context ctx = EventSourcedEntityCreationContextImpl();
-    var instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
+    var instance = getOrCreateEntityInstance(context.entityId(), context);
   }
 
   @override
   Optional<Any> snapshot(SnapshotContext context) {
     // TODO: implement snapshot
-    Context ctx = EventSourcedEntityCreationContextImpl();
-    var instance = getOrCreateEntityInstance(service.persistenceId(), ctx);
+    var instance = getOrCreateEntityInstance(context.entityId(), context);
     return null;
   }
 
-  Optional<Object> createEntityInstance(String persistenceId, Context context) {
+  Optional<Object> createEntityInstance(String entityId, EventSourcedContext context, bool callNonDefaultConstructor) {
     //todo: Create instance passing correct persistenceId and context values
     _logger.v('Creating Entity Instance...');
     return Optional.of(
-        ReflectHelper.createInstance(service.entity(), persistenceId, context));
+        ReflectHelper.createInstance(service.entity(), entityId, context, callNonDefaultConstructor));
   }
 
   Object postConstruct(Object entity) {
@@ -358,7 +354,7 @@ class CommandContextImpl extends CommandContext {
         ..sequence = Int64.parseInt(nextSequenceNumber.toString())
         ..payload = anyEvent;
 
-      entityHandler.handleEvent(eventSeq, EventSourcedContextImpl());
+      entityHandler.handleEvent(eventSeq, EventSourcedContextImpl(command.entityId));
 
       events.add(anyEvent);
       performSnapshot = (snapshotEvery > 0) &&
@@ -482,6 +478,10 @@ class RuntimeException {}
 abstract class EventSourcedContext extends EntityContext {}
 
 class EventSourcedContextImpl extends EventSourcedContext {
+  final String entity;
+
+  EventSourcedContextImpl(this.entity);
+
   @override
   String entityId() {
     // TODO: implement entityId
