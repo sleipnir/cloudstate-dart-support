@@ -47,6 +47,11 @@ class ReflectHelper {
       var topLevel = false;
       if (callNonDefaultConstructor) {
         arguments.clear();
+
+        if (constructors.length > 1){
+          throw Exception('It is not allowed to define more than one constructor per Entity');
+        }
+
         constructors.forEach((construct) {
           _logger.v('Constructor found $construct');
           if (construct is MethodMirror) {
