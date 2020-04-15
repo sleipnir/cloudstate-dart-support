@@ -3,3 +3,7 @@ targets:
     sources:
       exclude:
         - example/**
+        - .idea/**
+        - .git/**
+        - cloudstate-dart-support.iml
+        - .dart_tool/**

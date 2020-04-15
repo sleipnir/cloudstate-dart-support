@@ -1,7 +1,6 @@
 name: cloudstate
 version: 0.5.0
 description: A Cloudstate Dart Language Support.
-author: Adriano Santos <sleipnir@bsd.com.br>
 homepage: https://cloudstate.io
 repository: https://github.com/sleipnir/cloudstate-dart-support.git
 
@@ -25,6 +24,5 @@ dev_dependencies:
   pedantic: ^1.8.0
   build_runner: ^1.5.2
   build_test: ^0.10.8
-  build_web_compilers: ^2.1.1
   mockito: ^4.1.0
   test: ^1.6.4
