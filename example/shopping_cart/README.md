@@ -18,19 +18,10 @@ environment:
   sdk: '>=2.7.0 <3.0.0'
 
 dependencies:
-  cloudstate:
-    path: ../../
+  cloudstate: 0.5.0
   async: ^2.2.0
   grpc: ^2.1.3
   protobuf: ^1.0.1
-
-dev_dependencies:
-  pedantic: ^1.8.0
-  build_runner: ^1.5.2
-  build_test: ^0.10.8
-  build_web_compilers: ^2.1.1
-  mockito: ^4.1.0
-  test: ^1.6.4
 
 ```
 
@@ -151,6 +142,14 @@ import 'generated/shoppingcart.pb.dart' as Shoppingcart;
 @EventSourcedEntity('ShoppingCartEntity')
 class ShoppingCartEntity {
   final Map<String, Shoppingcart.LineItem> _cart = {};
+  
+  String entityId;
+  Context context;
+  
+  ShoppingCartEntity.create(@EntityId() String entityId, Context context) {
+    this.entityId = entityId;
+    this.context = context;
+  }
 
   @Snapshot()
   Domain.Cart snapshot() {
@@ -232,6 +231,10 @@ class ShoppingCartEntity {
 
 }
 ```
+
+***Note: You are not required to create a constructor, but it is useful if you want to access the entity id 
+or the EventSourcedCreatedContext. In this case, the class is only allowed to have only one constructor, which can be a 
+normal constructor or a Named Constructor. Don't forget to annotate the entity parameter with the @EntityId annotation***
 
 Write file => bin/shopping_cart.dart:
 
