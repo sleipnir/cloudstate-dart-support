@@ -10,7 +10,7 @@ Add dependencies in pubspec.yml:
 
 ```yaml
 name: shopping_cart
-version: 0.5.0
+version: 0.5.1
 description: A Cloudstate Dart ShoppingCart Example.
 author: Adriano Santos <sleipnir@bsd.com.br>
 
@@ -18,7 +18,7 @@ environment:
   sdk: '>=2.7.0 <3.0.0'
 
 dependencies:
-  cloudstate: 0.5.0
+  cloudstate: 0.5.1
   async: ^2.2.0
   grpc: ^2.1.3
   protobuf: ^1.0.1
@@ -241,9 +241,7 @@ Write file => bin/shopping_cart.dart:
 ```dart
 
 import 'package:cloudstate/cloudstate.dart';
-
-// ignore: avoid_relative_lib_imports
-import '../lib/src/eventsourced_entity.dart';
+import 'package:shopping_cart/src/eventsourced_entity.dart';
 
 void main() {
   Cloudstate()

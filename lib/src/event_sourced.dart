@@ -482,8 +482,7 @@ class EventSourcedContextImpl extends EventSourcedContext {
 
   @override
   String entityId() {
-    // TODO: implement entityId
-    return null;
+    return entity;
   }
 
   @override

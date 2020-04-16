@@ -10,7 +10,7 @@ Add dependencies in pubspec.yml:
 
 ```yaml
 name: shopping_cart
-version: 0.5.0
+version: 0.5.1
 description: A Cloudstate Dart ShoppingCart Example.
 author: Adriano Santos <sleipnir@bsd.com.br>
 
@@ -18,11 +18,7 @@ environment:
   sdk: '>=2.7.0 <3.0.0'
 
 dependencies:
-  cloudstate:
-    path: ../../
-  async: ^2.2.0
-  grpc: ^2.1.3
-  protobuf: ^1.0.1
+  cloudstate: ^0.5.1
 
 dev_dependencies:
   pedantic: ^1.8.0
@@ -143,14 +139,20 @@ Write file => lib/eventsourced_entity.dart:
 import 'package:cloudstate/cloudstate.dart';
 
 import 'generated/google/protobuf/empty.pb.dart';
-// ignore: library_prefixes
 import 'generated/persistence/domain.pb.dart' as Domain;
-// ignore: library_prefixes
 import 'generated/shoppingcart.pb.dart' as Shoppingcart;
 
-@EventSourcedEntity('ShoppingCartEntity')
+@EventSourcedEntity()
 class ShoppingCartEntity {
   final Map<String, Shoppingcart.LineItem> _cart = {};
+  
+  String entityId;
+  Context context;
+  
+  ShoppingCartEntity.create(@EntityId() String entityId, Context context) {
+    this.entityId = entityId;
+    this.context = context;
+  }
 
   @Snapshot()
   Domain.Cart snapshot() {
@@ -233,14 +235,17 @@ class ShoppingCartEntity {
 }
 ```
 
+***Note: You are not required to create a constructor, but it is useful if you want to access the entity id 
+or the EventSourcedCreatedContext. In this case, the class is only allowed to have only one constructor, which can be a 
+normal constructor or a Named Constructor. Don't forget to annotate the entity parameter with the @EntityId annotation***
+
+
 Write file => bin/shopping_cart.dart:
 
 ```dart
 
 import 'package:cloudstate/cloudstate.dart';
-
-// ignore: avoid_relative_lib_imports
-import '../lib/src/eventsourced_entity.dart';
+import 'package:shopping_cart/src/eventsourced_entity.dart';
 
 void main() {
   Cloudstate()

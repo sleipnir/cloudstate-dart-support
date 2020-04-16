@@ -1,7 +1,5 @@
 import 'package:cloudstate/cloudstate.dart';
-
-// ignore: avoid_relative_lib_imports
-import '../lib/src/eventsourced_entity.dart';
+import 'package:shopping_cart/src/eventsourced_entity.dart';
 
 void main() {
   Cloudstate()
