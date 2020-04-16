@@ -46,11 +46,6 @@ class EventSourcedStatefulService implements StatefulService {
     }
   }
 
-  bool isPersistenceIdNotEmpty(
-          EventSourcedEntity eventSourcedAnnotationInstance) =>
-      eventSourcedAnnotationInstance.persistenceId != null &&
-      eventSourcedAnnotationInstance.persistenceId.isNotEmpty;
-
   @override
   String serviceName() {
     return service;
@@ -70,6 +65,11 @@ class EventSourcedStatefulService implements StatefulService {
   Type entity() {
     return userEntity;
   }
+
+  bool isPersistenceIdNotEmpty(
+      EventSourcedEntity eventSourcedAnnotationInstance) =>
+      eventSourcedAnnotationInstance.persistenceId != null &&
+          eventSourcedAnnotationInstance.persistenceId.isNotEmpty;
 }
 
 class EventSourcedEntityHandlerFactory {
@@ -124,7 +124,6 @@ class EventSourcedEntityHandlerImpl
 
   ClassMirror _entityClassMirror;
   InstanceMirror _entityInstanceMirror;
-  // ignore: prefer_collection_literals
   List<MethodMirror> _allDeclaredMethods = [];
   final Map<String, MethodMirror> _snapshotMethods = {};
   final Map<String, MethodMirror> _snapshotHandlerMethods = {};
@@ -245,8 +244,7 @@ class EventSourcedEntityHandlerImpl
 class EventSourcedEntity {
   final String persistenceId;
   final int snapshotEvery;
-  // ignore: avoid_init_to_null
-  const EventSourcedEntity([this.persistenceId = null, this.snapshotEvery = 0]);
+  const EventSourcedEntity([this.persistenceId = '', this.snapshotEvery = 0]);
 }
 
 class EventSourcedCommandHandler {
