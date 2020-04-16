@@ -255,3 +255,11 @@ void main() {
     ..start();
 }
 ```
+
+Build and run on docker:
+
+```
+docker build -t sleipnir/cloudstate-dart-shoppingcart:0.5.1
+
+docker run --rm -p 8080:8080 -p 8181:8181 --name dart-shoppingcartsleipnir/cloudstate-dart-shoppingcart:0.5.1
+```
