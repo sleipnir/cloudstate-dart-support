@@ -3,7 +3,7 @@ import 'package:shopping_cart/src/eventsourced_entity.dart';
 
 void main() {
   Cloudstate()
-    ..port = 8080
+    ..port = 8089
     ..address = 'localhost'
     ..registerEventSourcedEntity(
         'com.example.shoppingcart.ShoppingCart', ShoppingCartEntity)

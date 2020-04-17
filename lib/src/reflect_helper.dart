@@ -101,6 +101,17 @@ class ReflectHelper {
 
   static Optional<Any> invoke(
       Object instance, MethodMirror method, Any payload, Context context) {
+
+    if (payload == null) {
+      var instanceMirrorResult =
+          reflect(instance).invoke(method.simpleName, []);
+
+      var result = Any.pack(instanceMirrorResult.reflectee);
+      _logger.d('\nResult: $instanceMirrorResult.\nType result:\n${result}');
+
+      return Optional.of(result);
+    }
+
     if (method.parameters.isEmpty) {
       _logger.v('Using $method!');
 

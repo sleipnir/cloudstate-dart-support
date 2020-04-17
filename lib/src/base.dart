@@ -12,8 +12,9 @@ class EntityId {
 class Config {
   int port;
   String address;
+  Level logLevel;
 
-  Config(this.port, this.address);
+  Config(this.port, this.address, [this.logLevel = Level.info]);
 }
 
 class CloudstateRunner {
@@ -23,18 +24,20 @@ class CloudstateRunner {
   EntityDiscoveryService _entityDiscoveryService;
   EventSourcedService _eventSourcedService;
 
-  final _logger = Logger(
-    filter: CloudstateLogFilter(),
-    printer: PrettyPrinter(),
-    output: SimpleConsoleOutput(),
-  );
+  Logger _logger;
 
   CloudstateRunner(this.config, this.services);
 
   Future<void> start() async {
-    _eventSourcedService = EventSourcedService(services);
+    _logger = Logger(
+      filter: CloudstateLogFilter(config.logLevel),
+      printer: PrettyPrinter(),
+      output: SimpleConsoleOutput(),
+    );
 
-    _entityDiscoveryService = EntityDiscoveryService(services);
+    _eventSourcedService = EventSourcedService(config, services);
+
+    _entityDiscoveryService = EntityDiscoveryService(config, services);
 
     final server = Server([_entityDiscoveryService, _eventSourcedService]);
 
@@ -149,8 +152,15 @@ class SimpleConsoleOutput extends LogOutput {
 }
 
 class CloudstateLogFilter extends LogFilter {
+  Level logLevel;
+
+  CloudstateLogFilter([this.logLevel = Level.info]);
+
   @override
   bool shouldLog(LogEvent event) {
-    return true;
+    if (event.level.index >= logLevel.index) {
+      return true;
+    }
+    return false;
   }
 }

@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:mirrors';
 import 'package:cloudstate/cloudstate.dart';
 import 'package:logger/logger.dart';
+import 'package:protobuf/protobuf.dart';
 import 'package:yaml/yaml.dart';
 import 'package:cloudstate/src/generated/protocol/cloudstate/entity.pb.dart';
 
@@ -11,6 +13,8 @@ import 'package:cloudstate/src/generated/protocol/cloudstate/crdt.pbgrpc.dart';
 import 'package:cloudstate/src/generated/protocol/google/protobuf/empty.pb.dart';
 
 import 'package:grpc/src/server/call.dart';
+
+import 'generated/protocol/google/protobuf/any.pb.dart';
 
 class StatefulService {
   // ignore: missing_return
@@ -24,15 +28,19 @@ class StatefulService {
 }
 
 class EntityDiscoveryService extends EntityDiscoveryServiceBase {
-  final _logger = Logger(
-    filter: null,
-    printer: LogfmtPrinter(),
-    output: SimpleConsoleOutput(),
-  );
+  Logger _logger;
+  Config config;
+  Map<String, StatefulService> services;
 
-  final Map<String, StatefulService> services;
-
-  EntityDiscoveryService(this.services);
+  EntityDiscoveryService(Config config, Map<String, StatefulService> services){
+    this.config = config;
+    this.services = services;
+    _logger = Logger(
+      filter: CloudstateLogFilter(config.logLevel),
+      printer: LogfmtPrinter(),
+      output: SimpleConsoleOutput(),
+    );
+  }
 
   @override
   Future<EntitySpec> discover(ServiceCall call, ProxyInfo request) {
@@ -72,8 +80,6 @@ class EntityDiscoveryService extends EntityDiscoveryServiceBase {
   }
 
   Entity createEntity(String k, StatefulService v) {
-    print(
-        'PersistenceId -> ${v.persistenceId()}. ServiceName -> ${v.serviceName()}');
     return Entity()
       ..serviceName = v.serviceName()
       ..entityType = v.entityType()
@@ -82,15 +88,21 @@ class EntityDiscoveryService extends EntityDiscoveryServiceBase {
 }
 
 class EventSourcedService extends EventSourcedServiceBase {
-  final _logger = Logger(
-    filter: null,
+  Logger _logger;
+
+  Config config;
+  Map<String, StatefulService> services;
+
+  EventSourcedService(Config config, Map<String, StatefulService> services){
+    this.config = config;
+    this.services = services;
+    _logger = Logger(
+    filter: CloudstateLogFilter(config.logLevel),
     printer: LogfmtPrinter(),
-    output: ConsoleOutput(),
-  );
+    output: SimpleConsoleOutput(),
+    );
 
-  final Map<String, StatefulService> services;
-
-  EventSourcedService(this.services);
+  }
 
   /// The stream. One stream will be established per active entity.
   /// Once established, the first message sent will be Init, which contains the entity ID, and,
@@ -141,8 +153,8 @@ class EventSourcedService extends EventSourcedServiceBase {
             EventSourcedEntityHandlerFactory.getOrCreate(entityId, service);
 
         if (initMessage.hasSnapshot()) {
+          _logger.d('Message has Snapshot');
           var eventSourcedSnapshot = initMessage.snapshot;
-          var snapshot = eventSourcedSnapshot.snapshot;
           snapshotSequence = eventSourcedSnapshot.snapshotSequence.toInt();
 
           entityHandler.handleSnapshot(eventSourcedSnapshot,
@@ -179,7 +191,10 @@ class EventSourcedService extends EventSourcedServiceBase {
             ..clientAction = clientAction;
 
           if (context.hasSnapshot()) {
-            //eventSourcedReply.snapshot
+            var snapshotResponse = entityHandler.snapshot(SnapshotContextImpl(entityId, snapshotSequence));
+
+            eventSourcedReply.snapshot = snapshotResponse
+                .orElseGet(() => Any.pack(reflect(Empty.getDefault()) as GeneratedMessage));
           }
 
           if (context.hasEvents()) {

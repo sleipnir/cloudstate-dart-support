@@ -175,22 +175,33 @@ class EventSourcedEntityHandlerImpl
         f.parameters.length == 1 &&
         type == MirrorSystem.getName(f.parameters[0].simpleName).toLowerCase());
 
-    _logger.d('Method => $method');
+    _logger.d('EventHandler Method => $method');
     ReflectHelper.invoke(instance, method, anyEvent.payload, context);
   }
 
   @override
   void handleSnapshot(
       EventSourcedSnapshot anySnapshot, SnapshotContext context) {
-    // TODO: implement handleSnapshot
     var instance = getOrCreateEntityInstance(context.entityId(), context);
+
+    var typeUrl = anySnapshot.snapshot.typeUrl;
+    var type = typeUrl.split('.').last.toLowerCase();
+
+    var method = _snapshotHandlerMethods.values.firstWhere((f) =>
+    f.parameters.length == 1 &&
+        type == MirrorSystem.getName(f.parameters[0].simpleName).toLowerCase());
+
+    _logger.d('SnapshotHandler Method => $method');
+    ReflectHelper.invoke(instance, method, anySnapshot.snapshot, context);
   }
 
   @override
   Optional<Any> snapshot(SnapshotContext context) {
-    // TODO: implement snapshot
     var instance = getOrCreateEntityInstance(context.entityId(), context);
-    return null;
+    var method = _snapshotMethods.values.first;
+
+    _logger.d('Snapshot Method => $method');
+    return ReflectHelper.invoke(instance, method, null, context);
   }
 
   Optional<Object> createEntityInstance(String entityId, EventSourcedContext context, bool callNonDefaultConstructor) {
@@ -347,6 +358,7 @@ class CommandContextImpl extends CommandContext {
       var anyEvent = Any.pack(event as GeneratedMessage);
       sequence ??= 0;
       var nextSequenceNumber = sequence + events.length + 1;
+      _logger.d('Snapshot sequence: $sequence next sequence: $nextSequenceNumber');
 
       var eventSeq = EventSourcedEvent.create()
         ..sequence = Int64.parseInt(nextSequenceNumber.toString())
@@ -357,6 +369,7 @@ class CommandContextImpl extends CommandContext {
       events.add(anyEvent);
       performSnapshot = (snapshotEvery > 0) &&
           (performSnapshot || (nextSequenceNumber % snapshotEvery == 0));
+      _logger.d('Perfrm snapshot $performSnapshot');
     }
   }
 
@@ -405,10 +418,13 @@ abstract class EventSourcedEntityCreationContext extends EventSourcedContext {}
 
 class EventSourcedEntityCreationContextImpl
     extends EventSourcedEntityCreationContext {
+  String entity;
+
+  EventSourcedEntityCreationContextImpl(this.entity);
+
   @override
   String entityId() {
-    // TODO: implement entityId
-    return null;
+    return entity;
   }
 
   @override

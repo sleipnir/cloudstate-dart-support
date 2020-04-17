@@ -1,6 +1,7 @@
 /// More dartdocs go here.
 library cloudstate;
 
+export 'package:logger/logger.dart';
 export 'src/base.dart';
 export 'src/crdt.dart';
 export 'src/event_sourced.dart';
@@ -15,9 +16,9 @@ class Cloudstate {
   final Map<String, StatefulService> services = {};
 
   final _logger = Logger(
-    filter: CloudstateLogFilter(),
+    filter: CloudstateLogFilter(Level.verbose),
     printer: LogfmtPrinter(),
-    output: ConsoleOutput(),
+    output: SimpleConsoleOutput(),
   );
 
   int port;
@@ -31,7 +32,7 @@ class Cloudstate {
       throw ArgumentError('type: $entity');
     }
 
-    _config = Config(port, address);
+    _config = Config(port, address, Level.verbose);
     services[serviceName] = EventSourcedStatefulService(serviceName, entity, 1);
   }
 
