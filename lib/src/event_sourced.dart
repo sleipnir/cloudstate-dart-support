@@ -74,9 +74,9 @@ class EventSourcedStatefulService implements StatefulService {
 
 class EventSourcedEntityHandlerFactory {
   static final _logger = Logger(
-    filter: null,
+    filter: CloudstateLogFilter(),
     printer: LogfmtPrinter(),
-    output: ConsoleOutput(),
+    output: SimpleConsoleOutput(),
   );
 
   static final Map<String, EventSourcedEntityHandlerImpl> _services = {};
@@ -115,9 +115,9 @@ class EventSourcedEntityHandler {
 class EventSourcedEntityHandlerImpl
     implements EntityFactory, EventSourcedEntityHandler {
   static final _logger = Logger(
-    filter: null,
+    filter: CloudstateLogFilter(),
     printer: LogfmtPrinter(),
-    output: ConsoleOutput(),
+    output: SimpleConsoleOutput(),
   );
   final String persistenceId;
   final EventSourcedStatefulService service;
@@ -297,9 +297,9 @@ abstract class CommandContext extends EventSourcedContext
 
 class CommandContextImpl extends CommandContext {
   static final _logger = Logger(
-    filter: null,
+    filter: CloudstateLogFilter(),
     printer: LogfmtPrinter(),
-    output: ConsoleOutput(),
+    output: SimpleConsoleOutput(),
   );
 
   final EventSourcedEntityHandler entityHandler;

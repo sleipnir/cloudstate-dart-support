@@ -9,9 +9,9 @@ import 'generated/protocol/google/protobuf/any.pb.dart';
 
 class ReflectHelper {
   static final _logger = Logger(
-    filter: null,
+    filter: CloudstateLogFilter(),
     printer: LogfmtPrinter(),
-    output: ConsoleOutput(),
+    output: SimpleConsoleOutput(),
   );
 
   static Object createInstance(Type type,

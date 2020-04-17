@@ -27,7 +27,7 @@ class EntityDiscoveryService extends EntityDiscoveryServiceBase {
   final _logger = Logger(
     filter: null,
     printer: LogfmtPrinter(),
-    output: ConsoleOutput(),
+    output: SimpleConsoleOutput(),
   );
 
   final Map<String, StatefulService> services;

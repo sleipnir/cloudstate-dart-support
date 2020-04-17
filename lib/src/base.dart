@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:grpc/grpc.dart';
 import 'package:logger/logger.dart';
 import 'package:cloudstate/src/services.dart';
@@ -22,9 +24,9 @@ class CloudstateRunner {
   EventSourcedService _eventSourcedService;
 
   final _logger = Logger(
-    filter: null,
-    printer: LogfmtPrinter(),
-    output: ConsoleOutput(),
+    filter: CloudstateLogFilter(),
+    printer: PrettyPrinter(),
+    output: SimpleConsoleOutput(),
   );
 
   CloudstateRunner(this.config, this.services);
@@ -35,8 +37,8 @@ class CloudstateRunner {
     _entityDiscoveryService = EntityDiscoveryService(services);
 
     final server = Server([_entityDiscoveryService, _eventSourcedService]);
-    await server.serve(port: config.port);
 
+    await server.serve(port: config.port);
     _logger.i('Server listening on ${config.address}:${config.port} ...');
   }
 }
@@ -130,4 +132,25 @@ String capitalize(String string) {
   }
 
   return string[0].toUpperCase() + string.substring(1);
+}
+
+class SimpleConsoleOutput extends LogOutput {
+
+  @override
+  void output(OutputEvent event) {
+    for (var line in event.lines) {
+      printOutput(line);
+    }
+  }
+
+  void printOutput(String line) async {
+    await stdout.writeln('${DateTime.now()}: $line');
+  }
+}
+
+class CloudstateLogFilter extends LogFilter {
+  @override
+  bool shouldLog(LogEvent event) {
+    return true;
+  }
 }

@@ -15,7 +15,7 @@ class Cloudstate {
   final Map<String, StatefulService> services = {};
 
   final _logger = Logger(
-    filter: null,
+    filter: CloudstateLogFilter(),
     printer: LogfmtPrinter(),
     output: ConsoleOutput(),
   );
@@ -25,7 +25,7 @@ class Cloudstate {
   Config _config;
 
   void registerEventSourcedEntity(String serviceName, Type entity) {
-    _logger.i('Registering EventSourcedEntity...');
+    _logger.d('Registering EventSourcedEntity...');
 
     if (entity == null) {
       throw ArgumentError('type: $entity');
